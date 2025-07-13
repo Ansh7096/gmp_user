@@ -22,7 +22,7 @@ export default function Login() {
 
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:3000/api/auth/login", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, mobile_number: mobile }),
@@ -43,7 +43,7 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:3000/api/auth/login", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, mobile_number: mobile }),
@@ -72,7 +72,7 @@ export default function Login() {
 
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:3000/api/auth/verify-otp", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp }),

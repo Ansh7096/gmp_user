@@ -21,7 +21,7 @@ export default function ApprovingAuthorityLogin() {
         }
         setIsLoading(true);
         try {
-            const res = await fetch("/api/auth/approving-authority-login", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/approving-authority-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -55,7 +55,7 @@ export default function ApprovingAuthorityLogin() {
         }
         setIsLoading(true);
         try {
-            const res = await fetch("/api/auth/approving-authority-verify-otp", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/approving-authority-verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp })

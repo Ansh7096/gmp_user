@@ -39,7 +39,7 @@ export default function SubmitGrievance() {
             return;
         }
 
-        fetch(`http://localhost:3000/api/auth/profile?email=${emailFromAuth}`)
+        fetch(`https://gmp-lnmiit.vercel.app/api/auth/profile?email=${emailFromAuth}`)
             .then(res => {
                 if (!res.ok) throw new Error("Failed to load profile");
                 return res.json();
@@ -64,7 +64,7 @@ export default function SubmitGrievance() {
     }, []);
 
     useEffect(() => {
-        fetch("http://localhost:3000/api/grievances/departments")
+        fetch("https://gmp-lnmiit.vercel.app/api/grievances/departments")
             .then(res => res.json())
             .then(setDepartmentsList)
             .catch(err => console.error("Dept fetch failed:", err));
@@ -76,7 +76,7 @@ export default function SubmitGrievance() {
 
         if (name === "department") {
             setFormData(p => ({ ...p, department: value, category: "", urgency: "Normal" }));
-            fetch(`http://localhost:3000/api/grievances/categories/${value}`)
+            fetch(`https://gmp-lnmiit.vercel.app/api/grievances/categories/${value}`)
                 .then(res => res.json())
                 .then(setCategoriesList)
                 .catch(err => console.error("Cat fetch failed:", err));
@@ -133,7 +133,7 @@ export default function SubmitGrievance() {
             data.append("email", userData.email);
             if (formData.attachment) data.append("attachment", formData.attachment);
 
-            const res = await fetch("http://localhost:3000/api/grievances/submit", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/grievances/submit", {
                 method: "POST",
                 body: data,
             });

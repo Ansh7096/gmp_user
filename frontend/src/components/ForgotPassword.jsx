@@ -22,7 +22,7 @@ export default function ForgotPassword() {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier }),
@@ -59,7 +59,7 @@ export default function ForgotPassword() {
 
         setIsLoading(true);
         try {
-            const res = await fetch("http://localhost:3000/api/auth/reset-password", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/reset-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier, otp, newPassword }),

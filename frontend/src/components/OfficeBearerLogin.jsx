@@ -16,7 +16,7 @@ export default function OfficeBearerLogin() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetch("/api/grievances/departments")
+        fetch("https://gmp-lnmiit.vercel.app/api/grievances/departments")
             .then(res => res.json())
             .then(setDepartments)
             .catch(err => console.error("Dept fetch failed:", err));
@@ -30,7 +30,7 @@ export default function OfficeBearerLogin() {
         }
         setIsLoading(true);
         try {
-            const response = await fetch("/api/auth/office-bearer-login", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/office-bearer-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ department, email, password, mobile_number: mobile }),
@@ -50,7 +50,7 @@ export default function OfficeBearerLogin() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const response = await fetch("/api/auth/office-bearer-login", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/office-bearer-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ department, email, password, mobile_number: mobile }),
@@ -77,7 +77,7 @@ export default function OfficeBearerLogin() {
         }
         setIsLoading(true);
         try {
-            const response = await fetch("/api/auth/office-bearer-verify-otp", {
+            const response = await fetch("https://gmp-lnmiit.vercel.app/api/auth/office-bearer-verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp }),

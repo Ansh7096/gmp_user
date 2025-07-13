@@ -11,7 +11,7 @@ export default function TrackGrievance() {
         setData(null);
         try {
             const res = await axios.get(
-                `http://localhost:3000/api/grievances/track/${encodeURIComponent(
+                `https://gmp-lnmiit.vercel.app/api/grievances/track/${encodeURIComponent(
                     grievanceId
                 )}`
             );
