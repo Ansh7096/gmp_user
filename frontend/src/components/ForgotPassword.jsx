@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { FlashContext } from "../App";
 import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
@@ -38,10 +39,16 @@ export default function ForgotPassword() {
                 return;
             }
 
-            alert(data.message);
+            flashContext.showFlash(data.message, "success");
             setOtpRequested(true);
         } catch (err) {
-            setErrorMessage(err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    setErrorMessage(err.message);
+    flashContext.showFlash(err.message, "error");
+} else {
+    setErrorMessage("Something went wrong, please try again.");
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         }
     };
 
@@ -71,10 +78,16 @@ export default function ForgotPassword() {
                 return;
             }
 
-            alert(data.message);
+            flashContext.showFlash(data.message, "success");
             navigate("/login");
         } catch (err) {
-            setErrorMessage(err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    setErrorMessage(err.message);
+    flashContext.showFlash(err.message, "error");
+} else {
+    setErrorMessage("Something went wrong, please try again.");
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }

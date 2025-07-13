@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { FlashContext } from "../App";
 import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
 
 export default function Login() {
+    const flashContext = useContext(FlashContext);
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -16,7 +18,7 @@ export default function Login() {
     const handleRequestOtp = async (e) => {
         e.preventDefault();
         if (!email || !password || !mobile) {
-            alert("Please fill all fields");
+            flashContext.showFlash("Please fill all fields", "error");
             return;
         }
 
@@ -31,9 +33,13 @@ export default function Login() {
             if (!response.ok) throw new Error(data.message || "Login failed");
 
             setOtpRequested(true);
-            alert("OTP sent to your registered email id");
+            flashContext.showFlash("OTP sent to your registered email id", "success");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }
@@ -51,9 +57,13 @@ export default function Login() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "Resend failed");
 
-            alert("OTP resent successfully");
+            flashContext.showFlash("OTP resent successfully", "success");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }
@@ -62,11 +72,11 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
         if (!otpRequested) {
-            alert("Please request OTP first");
+            flashContext.showFlash("Please request OTP first", "error");
             return;
         }
         if (!otp) {
-            alert("Please enter OTP");
+            flashContext.showFlash("Please enter OTP", "error");
             return;
         }
 
@@ -83,7 +93,11 @@ export default function Login() {
             localStorage.setItem("userEmail", email);
             navigate("/home");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }

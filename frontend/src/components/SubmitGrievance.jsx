@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { FlashContext } from "../App";
 
 export default function SubmitGrievance() {
+    const flashContext = useContext(FlashContext);
     const locations = [
         "BH1", "BH2", "BH3", "BH4-tower1", "BH4-tower2", "GH", "Faculty Quarters",
         "Guest House", "Lecture Hall Complex", "Academic Block", "Main Gate 1",
@@ -140,7 +142,12 @@ export default function SubmitGrievance() {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || "Submission failed");
 
-            alert(`✅ Grievance submitted successfully.\n📎 Ticket_id: ${json.ticket_id || "Error generating ticket id, check your mail!"}`);
+            flashContext.showFlash((
+  <div style={{ textAlign: 'center', lineHeight: 1.6 }}>
+    <div style={{ fontWeight: 500, fontSize: '1.1rem' }}>Grievance Submitted Successfully</div>
+    <div style={{ marginTop: 6, fontSize: '1rem' }}>Ticket id- {json.ticket_id || "Error generating ticket id, check your mail!"}</div>
+  </div>
+), "success");
 
             setFormData({
                 title: "",

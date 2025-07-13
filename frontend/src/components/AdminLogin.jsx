@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { FlashContext } from "../App";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
@@ -16,7 +17,7 @@ export default function AdminLogin() {
     const requestOtp = async (e) => {
         e.preventDefault();
         if (!email || !password || !mobile) {
-            alert("Please fill all fields");
+            flashContext.showFlash("Please fill all fields", "error");
             return;
         }
         setIsLoading(true);
@@ -29,9 +30,13 @@ export default function AdminLogin() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Login failed");
             setOtpRequested(true);
-            alert("OTP sent to your registered email");
+            flashContext.showFlash("OTP sent to your registered email", "success");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }
@@ -42,11 +47,11 @@ export default function AdminLogin() {
     const handleLogin = async (e) => {
         e.preventDefault();
         if (!otpRequested) {
-            alert("Please request OTP first");
+            flashContext.showFlash("Please request OTP first", "error");
             return;
         }
         if (!otp) {
-            alert("Please enter OTP");
+            flashContext.showFlash("Please enter OTP", "error");
             return;
         }
         setIsLoading(true);
@@ -61,7 +66,11 @@ export default function AdminLogin() {
             localStorage.setItem("adminEmail", email);
             navigate("/admin");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }

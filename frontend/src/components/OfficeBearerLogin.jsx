@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { FlashContext } from "../App";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
@@ -25,7 +26,7 @@ export default function OfficeBearerLogin() {
     const handleRequestOtp = async (e) => {
         e.preventDefault();
         if (!department || !email || !password || !mobile) {
-            alert("Please fill all fields");
+            flashContext.showFlash("Please fill all fields", "error");
             return;
         }
         setIsLoading(true);
@@ -38,9 +39,13 @@ export default function OfficeBearerLogin() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Login failed");
             setOtpRequested(true);
-            alert("OTP sent to your registered email id");
+            flashContext.showFlash("OTP sent to your registered email id", "success");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }
@@ -57,9 +62,13 @@ export default function OfficeBearerLogin() {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Resend failed");
-            alert("OTP resent successfully");
+            flashContext.showFlash("OTP resent successfully", "success");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }
@@ -68,11 +77,11 @@ export default function OfficeBearerLogin() {
     const handleLogin = async (e) => {
         e.preventDefault();
         if (!otpRequested) {
-            alert("Please request OTP first");
+            flashContext.showFlash("Please request OTP first", "error");
             return;
         }
         if (!otp) {
-            alert("Please enter OTP");
+            flashContext.showFlash("Please enter OTP", "error");
             return;
         }
         setIsLoading(true);
@@ -87,7 +96,11 @@ export default function OfficeBearerLogin() {
             localStorage.setItem("officeBearerEmail", email);
             navigate("/office-bearer");
         } catch (err) {
-            alert("Error: " + err.message);
+            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
+    flashContext.showFlash(err.message, "error");
+} else {
+    flashContext.showFlash("Something went wrong, please try again.", "error");
+}
         } finally {
             setIsLoading(false);
         }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,6 +8,8 @@ import {
 } from "react-router-dom";
 
 import Loader from "./components/Loader";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./components/Navbar"; // Student/Faculty/Staff Navbar
 import Home from "./components/Home";
 import LandingHome from "./components/LandingHome";
@@ -24,6 +26,8 @@ import AdminLogin from "./components/AdminLogin";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import ForgotPassword from "./components/ForgotPassword";
+
+export const FlashContext = createContext({ showFlash: () => {} });
 
 function AppContent() {
   const location = useLocation();
@@ -59,6 +63,20 @@ function AppContent() {
 export default function App() {
   const [loading, setLoading] = useState(true);
 
+  // Provide a showFlash function using react-toastify
+  const showFlash = (message, type = "info") => {
+    toast[type](message, {
+      position: "top-center",
+      autoClose: 7500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored"
+    });
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
@@ -67,8 +85,21 @@ export default function App() {
   if (loading) return <Loader />;
 
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <FlashContext.Provider value={{ showFlash }}>
+      <ToastContainer
+  toastClassName="bg-[#FFFDEB] text-[#6B4F27] border border-[#F5E9C9] shadow-md min-w-[360px] max-w-[600px] w-fit"
+  bodyClassName="text-base font-medium text-center"
+  position="top-center"
+  autoClose={3500}
+  hideProgressBar={false}
+  closeOnClick
+  pauseOnHover
+  draggable
+  theme="light"
+/>
+      <Router>
+        <AppContent />
+      </Router>
+    </FlashContext.Provider>
   );
 }
