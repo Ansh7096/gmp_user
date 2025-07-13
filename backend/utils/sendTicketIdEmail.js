@@ -29,7 +29,7 @@ export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveI
 
     const mailOptions = {
         from: `"LNMIIT Grievance Portal" <${process.env.EMAIL_USER}>`,
-        to: email,         // match working OTP/registration logic
+        to: `"${name}" <${email}>`,         // 👈 make it explicit
         subject: `Your Grievance Ticket ${ticketId}`,
         html: `
       <p>Hi ${name},</p>
@@ -46,7 +46,7 @@ export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveI
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log("Ticket ID email sent:", info.response);
+        console.log("Ticket ID email sent-:", info.response);
     } catch (err) {
         console.error("Error sending ticket ID email:", err);
         throw err;    // re‑throw so the controller’s .catch can pick it up
