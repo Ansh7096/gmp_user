@@ -21,7 +21,7 @@ export default function AdminLogin() {
         }
         setIsLoading(true);
         try {
-            const res = await fetch("/api/auth/admin-login", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/admin-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, mobile_number: mobile }),
@@ -51,7 +51,7 @@ export default function AdminLogin() {
         }
         setIsLoading(true);
         try {
-            const res = await fetch("/api/auth/admin-verify-otp", {
+            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/admin-verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp }),
