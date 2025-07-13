@@ -22,7 +22,7 @@ export default defineConfig({
         // proxy any /api/* requests to your Express backend
         proxy: {
             '/api': {
-                target: 'https://gmp-lnmiit.vercel.app/',
+                target: 'http://localhost:3000',
                 changeOrigin: true,
                 secure: false,
             },
