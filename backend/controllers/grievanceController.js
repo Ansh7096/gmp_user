@@ -104,7 +104,7 @@ export const submitGrievance = async (req, res) => {
                 email,
                 ticket_id
             },
-            async (err) => {
+            (err) => {
                 if (err) {
                     console.error('DB error inserting grievance:', err);
                     return res.status(500).json({ error: 'DB error inserting grievance' });
@@ -126,13 +126,9 @@ Thank you for raising this with us.
 
 — Grievance Cell`;
 
-                console.log('Sending ticket ID email to', email, complainantName, ticket_id, urgency, resolutionTime);
-                try {
-                    await sendTicketIdEmail(email, complainantName, ticket_id, urgency, resolutionTime);
-                    console.log(`Grievance email sent to ${email}`);
-                } catch (mailErr) {
-                    console.error('Grievance email error:', mailErr);
-                }
+                sendTicketIdEmail(email, complainantName, ticket_id, urgency, resolutionTime)
+                    .then(() => console.log(`Grievance email sent to ${email}`))
+                    .catch(mailErr => console.error('Grievance email error:', mailErr));
 
                 // ✅ Final response
                 res.status(201).json({
