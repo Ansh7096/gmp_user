@@ -24,6 +24,10 @@ db.connect(err => {
     if (err) console.log('DB Connection Failed:', err);
     else console.log('MySQL Connected ✅');
 });
+// somewhere in your app.js / server.js, before your app.listen(...)
+app.get('/', (req, res) => {
+    res.send('Welcome to the Grievance Management System!')
+})
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
