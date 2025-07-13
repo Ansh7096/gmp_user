@@ -29,7 +29,7 @@ export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveI
 
     const mailOptions = {
         from: `"LNMIIT Grievance Portal" <${process.env.EMAIL_USER}>`,
-        to: `"${name}" <${email}>`,         // 👈 make it explicit
+        to: email,         // match working OTP/registration logic
         subject: `Your Grievance Ticket ${ticketId}`,
         html: `
       <p>Hi ${name},</p>
