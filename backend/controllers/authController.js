@@ -4,7 +4,7 @@ import { createUser, updateUserPassword, getUserByEmail } from '../models/User.j
 import { db } from '../config/db.js';
 import { sendOtpEmail } from '../utils/sendOtp.js';
 import { getOfficeBearerByEmail } from '../models/OfficeBearer.js';
-
+// ← NEW import
 import { getApprovingAuthorityByEmail } from '../models/ApprovingAuthority.js';
 import { sendRegistrationEmail } from '../utils/mail.js';
 import { getAdminByEmail } from '../models/Admin.js';

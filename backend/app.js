@@ -19,9 +19,6 @@ app.use('/api/grievances', grievanceRoutes);
 
 // serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
-app.get('/', (req, res) => {
-    res.send('Backend is running');
-});
 
 db.connect(err => {
     if (err) console.log('DB Connection Failed:', err);
