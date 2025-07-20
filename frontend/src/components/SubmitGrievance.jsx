@@ -31,7 +31,7 @@ export default function SubmitGrievance() {
             return;
         }
 
-        fetch(`http://localhost:3000/api/auth/profile?email=${emailFromAuth}`)
+        fetch(`/api/auth/profile?email=${emailFromAuth}`)
             .then(res => {
                 if (!res.ok) throw new Error("Failed to load profile");
                 return res.json();
@@ -58,8 +58,8 @@ export default function SubmitGrievance() {
 
     useEffect(() => {
         Promise.all([
-            fetch("http://localhost:3000/api/grievances/departments").then(res => res.json()),
-            fetch("http://localhost:3000/api/grievances/locations").then(res => res.json())
+            fetch("/api/grievances/departments").then(res => res.json()),
+            fetch("/api/grievances/locations").then(res => res.json())
         ]).then(([depts, locs]) => {
             setDepartmentsList(depts);
             setLocationsList(locs);
@@ -74,7 +74,7 @@ export default function SubmitGrievance() {
 
         if (name === "department") {
             setFormData(p => ({ ...p, department: value, category: "", urgency: "Normal" }));
-            fetch(`http://localhost:3000/api/grievances/categories/${value}`)
+            fetch(`/api/grievances/categories/${value}`)
                 .then(res => res.json())
                 .then(setCategoriesList)
                 .catch(err => {
@@ -132,7 +132,7 @@ export default function SubmitGrievance() {
             data.append("email", userData.email);
             if (formData.attachment) data.append("attachment", formData.attachment);
 
-            const res = await fetch("http://localhost:3000/api/grievances/submit", {
+            const res = await fetch("/api/grievances/submit", {
                 method: "POST",
                 body: data,
             });
