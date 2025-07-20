@@ -75,9 +75,9 @@ export default function OfficeBearer() {
         const fetchData = async () => {
             try {
                 const [grievanceRes, workerRes, deptRes] = await Promise.all([
-                    fetch(`/api/grievances/department/${departmentId}`),
-                    fetch(`/api/grievances/workers/${departmentId}`),
-                    fetch('/api/grievances/departments')
+                    fetch(`${API_BASE_URL}/grievances/department/${departmentId}`),
+                    fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`),
+                    fetch(`${API_BASE_URL}/grievances/departments`)
                 ]);
 
                 if (!grievanceRes.ok || !workerRes.ok || !deptRes.ok) {
@@ -173,7 +173,7 @@ export default function OfficeBearer() {
 
         const toastId = toast.loading("Transferring grievance...");
         try {
-            const res = await fetch('/api/grievances/transfer', {
+            const res = await fetch(`${API_BASE_URL}/grievances/transfer`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -184,7 +184,7 @@ export default function OfficeBearer() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to transfer grievance.");
 
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setTransferModalOpen(false);
@@ -204,7 +204,7 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(selectedGrievance.ticket_id);
             const officeBearerEmail = localStorage.getItem("userEmail");
 
-            const res = await fetch(`/api/grievances/${encodedTicketId}/assign`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -214,7 +214,7 @@ export default function OfficeBearer() {
             });
             if (!res.ok) throw new Error("Failed to assign grievance.");
 
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setAssignModalOpen(false);
@@ -247,9 +247,9 @@ export default function OfficeBearer() {
         const toastId = toast.loading('Resolving grievance...');
         try {
             const encodedTicketId = encodeURIComponent(ticketId);
-            const res = await fetch(`/api/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
             toast.success("Grievance resolved successfully!", { id: toastId });
         } catch (err) {
@@ -261,7 +261,7 @@ export default function OfficeBearer() {
         e.preventDefault();
         const toastId = toast.loading('Adding worker...');
         try {
-            const res = await fetch('/api/grievances/workers', {
+            const res = await fetch(`${API_BASE_URL}/grievances/workers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newWorker, department_id: departmentId }),
