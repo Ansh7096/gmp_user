@@ -7,7 +7,7 @@ dotenv.config();
 (async () => {
     try {
         const name = 'Admin';
-        const email = 'admin@lnmiit.ac.in';
+        const email = '22dcs001@lnmiit.ac.in';
         const plainPassword = '123456789';
         const mobile_number = '7357222550';
         const role = 'Admin';

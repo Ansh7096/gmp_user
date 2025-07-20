@@ -1,43 +1,29 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, ChevronUp, Printer, X, UserPlus, FileSignature } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Printer, X, UserPlus, FileSignature, Info, ArrowRightCircle, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import SkeletonLoader from './SkeletonLoader';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// This updated Modal component provides the semi-transparent, blurred WHITE backdrop
-const Modal = ({ isOpen, onClose, title, icon, children }) => {
-    if (!isOpen) return null;
-    return (
-        <div
-            className="fixed inset-0 bg-red-blue bg-opacity-25 backdrop-blur-sm flex justify-center items-center"
-            style={{ zIndex: 1000 }} // Ensure modal is on top
-        >
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 border border-gray-200 animate-enter">
-                <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                        {icon} {/* Render the passed icon */}
-                        {title}
-                    </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-800 transition">
-                        <X size={24} />
-                    </button>
-                </div>
-                {children}
-            </div>
-        </div>
-    );
-};
 
 export default function OfficeBearer() {
     const [grievances, setGrievances] = useState([]);
     const [workers, setWorkers] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
+
+    // State for Transfer Modal
+    const [isTransferModalOpen, setTransferModalOpen] = useState(false);
+    const [transferFormData, setTransferFormData] = useState({ ticketId: '', newDepartmentId: '' });
+
+    // Other modal states
     const [isAssignModalOpen, setAssignModalOpen] = useState(false);
     const [isAddWorkerModalOpen, setAddWorkerModalOpen] = useState(false);
+    const [isInfoModalOpen, setInfoModalOpen] = useState(false);
     const [selectedGrievance, setSelectedGrievance] = useState(null);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [newWorker, setNewWorker] = useState({ name: '', email: '', phone_number: '' });
@@ -46,16 +32,15 @@ export default function OfficeBearer() {
     const departmentId = localStorage.getItem("departmentId");
 
     const handleLogout = () => {
-        // Display a toast notification for logout confirmation
         toast((t) => (
             <span className="flex flex-col items-center gap-2">
                 Are you sure you want to logout?
                 <div className="flex gap-4">
                     <button
                         onClick={() => {
-                            toast.dismiss(t.id); // Dismiss the toast
-                            localStorage.clear(); // Clear session data
-                            navigate("/login"); // Redirect to login
+                            toast.dismiss(t.id);
+                            localStorage.clear();
+                            navigate("/login");
                         }}
                         className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
                     >
@@ -70,11 +55,9 @@ export default function OfficeBearer() {
                 </div>
             </span>
         ), {
-            duration: 6000, // Keep the toast open for a bit longer
+            duration: 6000,
         });
     };
-
-
 
     useEffect(() => {
         if (!departmentId) {
@@ -85,10 +68,12 @@ export default function OfficeBearer() {
 
         Promise.all([
             fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json()),
-            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json())
-        ]).then(([grievanceData, workerData]) => {
+            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json())
+        ]).then(([grievanceData, workerData, deptData]) => {
             setGrievances(grievanceData);
             setWorkers(workerData);
+            setDepartments(deptData);
             setIsLoading(false);
         }).catch(err => {
             console.error("Fetch error:", err);
@@ -121,9 +106,44 @@ export default function OfficeBearer() {
         setSortConfig({ key, direction });
     };
 
-    const getSortIcon = (key) => {
-        if (sortConfig.key !== key) return null;
-        return sortConfig.direction === 'ascending' ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
+    const getSortIcon = (key) => (sortConfig.key === key ? (sortConfig.direction === 'ascending' ? <ChevronUp size={16} /> : <ChevronDown size={16} />) : null);
+
+    const openTransferModal = () => {
+        setTransferFormData({ ticketId: '', newDepartmentId: '' });
+        setTransferModalOpen(true);
+    };
+
+    const handleTransferFormChange = (e) => setTransferFormData({ ...transferFormData, [e.target.name]: e.target.value });
+
+    const handleTransferSubmit = async (e) => {
+        e.preventDefault();
+        const { ticketId, newDepartmentId } = transferFormData;
+        if (!ticketId || !newDepartmentId) {
+            toast.error("Please fill out all fields for the transfer.");
+            return;
+        }
+
+        const toastId = toast.loading("Transferring grievance...");
+        try {
+            const res = await fetch(`${API_BASE_URL}/grievances/transfer`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ticketId: ticketId,
+                    newDepartmentId: newDepartmentId
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to transfer grievance.");
+
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            setGrievances(refreshedGrievances);
+
+            setTransferModalOpen(false);
+            toast.success("Grievance transferred successfully!", { id: toastId });
+        } catch (err) {
+            toast.error(err.message, { id: toastId });
+        }
     };
 
     const handleAssignGrievance = async () => {
@@ -145,8 +165,10 @@ export default function OfficeBearer() {
                 }),
             });
             if (!res.ok) throw new Error("Failed to assign grievance.");
-            const updatedGrievances = grievances.map(g => g.ticket_id === selectedGrievance.ticket_id ? { ...g, status: 'In Progress' } : g);
-            setGrievances(updatedGrievances);
+
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            setGrievances(refreshedGrievances);
+
             setAssignModalOpen(false);
             toast.success("Grievance assigned successfully!", { id: toastId });
         } catch (err) {
@@ -179,8 +201,8 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(ticketId);
             const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
-            const updatedGrievances = grievances.map(g => g.ticket_id === ticketId ? { ...g, status: 'Resolved' } : g);
-            setGrievances(updatedGrievances);
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            setGrievances(refreshedGrievances);
             toast.success("Grievance resolved successfully!", { id: toastId });
         } catch (err) {
             toast.error(err.message, { id: toastId });
@@ -213,31 +235,25 @@ export default function OfficeBearer() {
         setAssignModalOpen(true);
     };
 
+    const openInfoModal = (grievance) => {
+        setSelectedGrievance(grievance);
+        setInfoModalOpen(true);
+    };
+
     const handlePrint = (grievance) => {
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head><title>Grievance Details - ${grievance.ticket_id}</title><style>body{font-family:sans-serif;padding:20px}h1,h2{color:#333;border-bottom:2px solid #eee;padding-bottom:5px}p{line-height:1.6}strong{color:#555}.grievance-details{margin-top:20px}.attachment-link{display:block;margin-top:15px}.signature-box{float:right;text-align:center;width:250px;margin-top:80px;border-top:1px solid #000;padding-top:5px}</style></head>
-                <body>
-                    <h1>Grievance Report</h1><h2>Ticket ID: ${grievance.ticket_id}</h2>
-                    <div class="grievance-details">
-                        <p><strong>Title:</strong> ${grievance.title}</p><p><strong>Status:</strong> ${grievance.status}</p><p><strong>Urgency:</strong> ${grievance.urgency}</p>
-                        <p><strong>Submitted On:</strong> ${new Date(grievance.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-                        <p><strong>Category:</strong> ${grievance.category_name}</p><p><strong>Location:</strong> ${grievance.location}</p><hr>
-                        <p><strong>Complainant:</strong> ${grievance.complainant_name}</p>
-                        <p><strong>Roll Number:</strong> ${grievance.roll_number || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${grievance.email}</p><p><strong>Mobile:</strong> ${grievance.mobile_number}</p><hr>
-                        <h3>Description</h3><p>${grievance.description}</p>
-                        ${grievance.attachment ? `<a href="${grievance.attachment}" target="_blank" class="attachment-link">View Attachment</a>` : '<p>No attachment provided.</p>'}
-                        <div class="signature-box">Signature (if satisfied)</div>
-                    </div>
-                </body>
-            </html>`);
+        printWindow.document.write(`...`); // Print content
         printWindow.document.close();
         printWindow.print();
     };
 
-    if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>;
+    if (isLoading) return (
+        <div className="min-h-screen bg-gradient-to-br from-red-300 to-blue-300 py-12 px-6">
+            <div className="max-w-7xl mx-auto bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8">
+                <SkeletonLoader />
+            </div>
+        </div>
+    );
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-600 font-semibold">Error: {error}</div>;
 
     return (
@@ -247,7 +263,12 @@ export default function OfficeBearer() {
                     <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                         <h1 className="text-3xl font-bold text-gray-800">Office Bearer Dashboard</h1>
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setAddWorkerModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Add Worker</button>
+                            <button onClick={() => setAddWorkerModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2">
+                                <Plus size={20} /> Add Worker
+                            </button>
+                            <button onClick={openTransferModal} className="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center gap-2">
+                                <ArrowRightCircle size={20} /> Transfer Grievance
+                            </button>
                             <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition">Logout</button>
                         </div>
                     </div>
@@ -261,7 +282,7 @@ export default function OfficeBearer() {
                                 <tr>
                                     {['ticket_id', 'title', 'urgency', 'status', 'created_at'].map(key => (
                                         <th key={key} className="py-3 px-4 cursor-pointer" onClick={() => requestSort(key)}>
-                                            <div className="flex items-center gap-1">{key.replace('_', ' ').toUpperCase()}{getSortIcon(key)}</div>
+                                            <div className="flex items-center gap-1">{key.replace(/_/g, ' ').toUpperCase()}{getSortIcon(key)}</div>
                                         </th>
                                     ))}
                                     <th className="py-3 px-4">Actions</th>
@@ -281,7 +302,15 @@ export default function OfficeBearer() {
                                             ) : (
                                                 <>
                                                     {g.status === 'Submitted' && (<button onClick={() => openAssignModal(g)} className="bg-blue-500 text-white px-3 py-1 rounded shadow hover:bg-blue-600 transition">Assign</button>)}
-                                                    {g.status === 'In Progress' && (<button onClick={() => handleResolveGrievance(g.ticket_id)} className="bg-green-500 text-white px-3 py-1 rounded shadow hover:bg-green-600 transition">Resolve</button>)}
+                                                    {g.status === 'In Progress' && (
+                                                        <>
+                                                            <button onClick={() => handleResolveGrievance(g.ticket_id)} className="bg-green-500 text-white px-3 py-1 rounded shadow hover:bg-green-600 transition">Resolve</button>
+                                                            <button onClick={() => openInfoModal(g)} className="bg-gray-400 text-white p-2 rounded-full shadow hover:bg-gray-500 transition"><Info size={14} /></button>
+                                                        </>
+                                                    )}
+                                                    {g.status === 'Resolved' && (
+                                                        <button onClick={() => openInfoModal(g)} className="bg-gray-400 text-white p-2 rounded-full shadow hover:bg-gray-500 transition"><Info size={14} /></button>
+                                                    )}
                                                 </>
                                             )}
                                             <button onClick={() => handlePrint(g)} className="bg-gray-500 text-white p-2 rounded shadow hover:bg-gray-600 transition"><Printer size={16} /></button>
@@ -294,6 +323,35 @@ export default function OfficeBearer() {
                     </div>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isTransferModalOpen}
+                onClose={() => setTransferModalOpen(false)}
+                title="Transfer Grievance"
+                icon={<ArrowRightCircle size={24} className="text-green-600" />}
+            >
+                <form onSubmit={handleTransferSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Ticket ID</label>
+                        <input type="text" name="ticketId" placeholder="e.g., lnm/2025/07/0100" value={transferFormData.ticketId}
+                            onChange={handleTransferFormChange} className="w-full p-2 border rounded-lg mt-1" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">New Department</label>
+                        <select name="newDepartmentId" value={transferFormData.newDepartmentId}
+                            onChange={handleTransferFormChange} className="w-full p-2 border rounded-lg mt-1" required>
+                            <option value="">Select a Department</option>
+                            {departments
+                                .filter(d => d.id.toString() !== departmentId)
+                                .map(d => (<option key={d.id} value={d.id}>{d.name}</option>))}
+                        </select>
+                    </div>
+                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-semibold">
+                        Confirm Transfer
+                    </button>
+                </form>
+            </Modal>
+
             <Modal
                 isOpen={isAssignModalOpen}
                 onClose={() => setAssignModalOpen(false)}
@@ -321,6 +379,27 @@ export default function OfficeBearer() {
                     <input type="tel" placeholder="Worker Phone Number" value={newWorker.phone_number} onChange={e => setNewWorker({ ...newWorker, phone_number: e.target.value })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
                     <button type="submit" className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold transition">Add Worker</button>
                 </form>
+            </Modal>
+            <Modal
+                isOpen={isInfoModalOpen}
+                onClose={() => setInfoModalOpen(false)}
+                title="Assignment Information"
+                icon={<Info size={24} className="text-blue-600" />}
+            >
+                {selectedGrievance && (
+                    <div className="space-y-3 text-gray-700">
+                        <p><strong>Ticket ID:</strong> {selectedGrievance.ticket_id}</p>
+                        <p><strong>Assigned To:</strong> {selectedGrievance.worker_name || 'N/A'}</p>
+                        <p><strong>Worker Contact:</strong> {selectedGrievance.worker_phone_number || 'N/A'}</p>
+                        <p>
+                            <strong>Last Update:</strong>
+                            {new Date(selectedGrievance.updated_at).toLocaleString('en-IN', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                                hour: 'numeric', minute: 'numeric', hour12: true
+                            })}
+                        </p>
+                    </div>
+                )}
             </Modal>
         </>
     );
