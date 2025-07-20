@@ -5,6 +5,8 @@ import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function ForgotPassword() {
     const [isLoading, setIsLoading] = useState(false);
     const [identifier, setIdentifier] = useState("");
@@ -39,7 +41,7 @@ export default function ForgotPassword() {
 
         const toastId = toast.loading('Requesting OTP...');
         try {
-            const res = await fetch("/api/auth/forgot-password", {
+            const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier }),
@@ -63,7 +65,7 @@ export default function ForgotPassword() {
         setIsLoading(true);
         const toastId = toast.loading('Resending OTP...');
         try {
-            const response = await fetch("/api/auth/forgot-password", {
+            const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier }),
@@ -94,7 +96,7 @@ export default function ForgotPassword() {
         setIsLoading(true);
         const toastId = toast.loading('Resetting password...');
         try {
-            const res = await fetch("/api/auth/reset-password", {
+            const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier, otp, newPassword }),

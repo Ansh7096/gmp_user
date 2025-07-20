@@ -4,6 +4,8 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, Resp
 import { ChevronDown, ChevronUp, LogOut } from 'lucide-react'; // Import LogOut icon
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Helper for downloading CSV
 const downloadCSV = (data, filename = 'report.csv') => {
     if (!data || data.length === 0) {
@@ -97,10 +99,10 @@ export default function Admin() {
         }
 
         Promise.all([
-            fetch('/api/grievances/admin/all').then(res => res.json()),
-            fetch('/api/grievances/admin/stats').then(res => res.json()),
-            fetch('/api/grievances/departments').then(res => res.json()),
-            fetch('/api/grievances/admin/escalated-level2').then(res => res.json())
+            fetch(`${API_BASE_URL}/grievances/admin/all`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/admin/stats`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/admin/escalated-level2`).then(res => res.json())
         ]).then(([grievanceData, statsData, deptData, level2Data]) => {
             setGrievances(grievanceData);
             setStats(statsData);
@@ -170,7 +172,7 @@ export default function Admin() {
         e.preventDefault();
         const toastId = toast.loading('Submitting...');
         try {
-            const res = await fetch(`/api/grievances/admin/${endpoint}`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/admin/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -201,7 +203,7 @@ export default function Admin() {
         }
         const toastId = toast.loading('Reverting grievance...');
         try {
-            const res = await fetch(`/api/grievances/admin/revert-to-level-1/${encodeURIComponent(ticketId)}`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/admin/revert-to-level-1/${encodeURIComponent(ticketId)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

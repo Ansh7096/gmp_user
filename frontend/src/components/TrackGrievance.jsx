@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function TrackGrievance() {
     const [grievanceId, setGrievanceId] = useState("");
     const [data, setData] = useState(null);
@@ -18,7 +20,7 @@ export default function TrackGrievance() {
         try {
             const encodedId = encodeURIComponent(grievanceId);
             const res = await axios.get(
-                `/api/grievances/track/${encodedId}`
+                `${API_BASE_URL}/grievances/track/${encodedId}`
             );
             setData(res.data);
         } catch (err) {

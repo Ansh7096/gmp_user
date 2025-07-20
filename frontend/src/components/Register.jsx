@@ -4,6 +4,8 @@ import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Register() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -22,7 +24,7 @@ export default function Register() {
         e.preventDefault();
         const toastId = toast.loading('Registering...');
         try {
-            const res = await fetch("/api/auth/register", {
+            const res = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

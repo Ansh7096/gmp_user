@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast'; // Added missing import
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function ApprovingAuthority() {
     const [allGrievances, setAllGrievances] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -29,8 +31,8 @@ export default function ApprovingAuthority() {
         }
 
         Promise.all([
-            fetch('/api/grievances/escalated').then(res => res.json()),
-            fetch('/api/grievances/departments').then(res => res.json())
+            fetch(`${API_BASE_URL}/grievances/escalated`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json())
         ]).then(([grievanceData, departmentData]) => {
             setAllGrievances(grievanceData);
             setDepartments(departmentData);
@@ -82,7 +84,7 @@ export default function ApprovingAuthority() {
             return;
         }
         try {
-            const res = await fetch(`/api/grievances/revert/${encodeURIComponent(ticketId)}`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/revert/${encodeURIComponent(ticketId)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ new_resolution_days: newDays })
@@ -103,7 +105,7 @@ export default function ApprovingAuthority() {
         e.preventDefault();
         const toastId = toast.loading("Adding Office Bearer...");
         try {
-            const res = await fetch('/api/grievances/add-office-bearer', {
+            const res = await fetch(`${API_BASE_URL}/grievances/add-office-bearer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newOfficeBearer)

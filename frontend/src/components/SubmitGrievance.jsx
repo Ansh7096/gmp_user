@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function SubmitGrievance() {
     const [locationsList, setLocationsList] = useState([]);
     const [userData, setUserData] = useState({ name: "", email: "", mobileNumber: "" });
@@ -31,7 +33,7 @@ export default function SubmitGrievance() {
             return;
         }
 
-        fetch(`/api/auth/profile?email=${emailFromAuth}`)
+        fetch(`${API_BASE_URL}/auth/profile?email=${emailFromAuth}`)
             .then(res => {
                 if (!res.ok) throw new Error("Failed to load profile");
                 return res.json();
@@ -58,8 +60,8 @@ export default function SubmitGrievance() {
 
     useEffect(() => {
         Promise.all([
-            fetch("/api/grievances/departments").then(res => res.json()),
-            fetch("/api/grievances/locations").then(res => res.json())
+            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/locations`).then(res => res.json())
         ]).then(([depts, locs]) => {
             setDepartmentsList(depts);
             setLocationsList(locs);
@@ -74,7 +76,7 @@ export default function SubmitGrievance() {
 
         if (name === "department") {
             setFormData(p => ({ ...p, department: value, category: "", urgency: "Normal" }));
-            fetch(`/api/grievances/categories/${value}`)
+            fetch(`${API_BASE_URL}/grievances/categories/${value}`)
                 .then(res => res.json())
                 .then(setCategoriesList)
                 .catch(err => {
@@ -132,7 +134,7 @@ export default function SubmitGrievance() {
             data.append("email", userData.email);
             if (formData.attachment) data.append("attachment", formData.attachment);
 
-            const res = await fetch("/api/grievances/submit", {
+            const res = await fetch(`${API_BASE_URL}/grievances/submit`, {
                 method: "POST",
                 body: data,
             });

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Search, ChevronDown, ChevronUp, Printer, X, UserPlus, FileSignature } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // This updated Modal component provides the semi-transparent, blurred WHITE backdrop
 const Modal = ({ isOpen, onClose, title, icon, children }) => {
     if (!isOpen) return null;
@@ -82,8 +84,8 @@ export default function OfficeBearer() {
         }
 
         Promise.all([
-            fetch(`/api/grievances/department/${departmentId}`).then(res => res.json()),
-            fetch(`/api/grievances/workers/${departmentId}`).then(res => res.json())
+            fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json())
         ]).then(([grievanceData, workerData]) => {
             setGrievances(grievanceData);
             setWorkers(workerData);
@@ -134,7 +136,7 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(selectedGrievance.ticket_id);
             const officeBearerEmail = localStorage.getItem("userEmail");
 
-            const res = await fetch(`/api/grievances/${encodedTicketId}/assign`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -175,7 +177,7 @@ export default function OfficeBearer() {
         const toastId = toast.loading('Resolving grievance...');
         try {
             const encodedTicketId = encodeURIComponent(ticketId);
-            const res = await fetch(`/api/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
             const updatedGrievances = grievances.map(g => g.ticket_id === ticketId ? { ...g, status: 'Resolved' } : g);
             setGrievances(updatedGrievances);
@@ -189,7 +191,7 @@ export default function OfficeBearer() {
         e.preventDefault();
         const toastId = toast.loading('Adding worker...');
         try {
-            const res = await fetch('/api/grievances/workers', {
+            const res = await fetch(`${API_BASE_URL}/grievances/workers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newWorker, department_id: departmentId }),
