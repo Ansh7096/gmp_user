@@ -5,6 +5,8 @@ import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
@@ -16,15 +18,11 @@ export default function Login() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // This effect runs when the Login page loads.
-        // If a user navigates back to this page while logged in,
-        // this will clear their session, forcing a fresh login.
         if (localStorage.getItem('userEmail')) {
             localStorage.clear();
             toast('You have been logged out.', { icon: 'info' });
         }
     }, []);
-
 
     useEffect(() => {
         let timer;
@@ -51,7 +49,7 @@ export default function Login() {
         setIsLoading(true);
         const toastId = toast.loading('Requesting OTP...');
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -74,7 +72,7 @@ export default function Login() {
         setIsLoading(true);
         const toastId = toast.loading('Resending OTP...');
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -105,7 +103,7 @@ export default function Login() {
         setIsLoading(true);
         const toastId = toast.loading('Logging in...');
         try {
-            const response = await fetch("/api/auth/verify-otp", {
+            const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp }),
