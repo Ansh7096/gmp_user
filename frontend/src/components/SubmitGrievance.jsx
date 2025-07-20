@@ -1,17 +1,8 @@
-import { useState, useEffect, useContext } from "react";
-import { FlashContext } from "../App";
+import { useState, useEffect } from "react";
+import toast from 'react-hot-toast';
 
 export default function SubmitGrievance() {
-    const flashContext = useContext(FlashContext);
-    const locations = [
-        "BH1", "BH2", "BH3", "BH4-tower1", "BH4-tower2", "GH", "Faculty Quarters",
-        "Guest House", "Lecture Hall Complex", "Academic Block", "Main Gate 1",
-        "Main Gate 2", "Sports Complex Area", "Medical Unit", "Mess A", "Mess B",
-        "Mess C", "Canteen Area", "Sports Ground", "MME Workshop", "MME Building",
-        "Balji Vihar Apartments", "Central Library", "Maintenance Store",
-        "Material Synthesis Lab", "Sub Station", "Admission Cell", "Faculty Offices"
-    ];
-
+    const [locationsList, setLocationsList] = useState([]);
     const [userData, setUserData] = useState({ name: "", email: "", mobileNumber: "" });
     const [profileLoading, setProfileLoading] = useState(true);
     const [profileError, setProfileError] = useState("");
@@ -31,7 +22,6 @@ export default function SubmitGrievance() {
     });
     const [previewUrl, setPreviewUrl] = useState(null);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState("");
 
     useEffect(() => {
         const emailFromAuth = localStorage.getItem("userEmail");
@@ -41,7 +31,7 @@ export default function SubmitGrievance() {
             return;
         }
 
-        fetch(`https://gmp-lnmiit.vercel.app/api/auth/profile?email=${emailFromAuth}`)
+        fetch(`http://localhost:3000/api/auth/profile?email=${emailFromAuth}`)
             .then(res => {
                 if (!res.ok) throw new Error("Failed to load profile");
                 return res.json();
@@ -61,27 +51,36 @@ export default function SubmitGrievance() {
             .catch(err => {
                 console.error("Profile fetch failed:", err);
                 setProfileError(err.message);
+                toast.error(err.message);
             })
             .finally(() => setProfileLoading(false));
     }, []);
 
     useEffect(() => {
-        fetch("https://gmp-lnmiit.vercel.app/api/grievances/departments")
-            .then(res => res.json())
-            .then(setDepartmentsList)
-            .catch(err => console.error("Dept fetch failed:", err));
+        Promise.all([
+            fetch("http://localhost:3000/api/grievances/departments").then(res => res.json()),
+            fetch("http://localhost:3000/api/grievances/locations").then(res => res.json())
+        ]).then(([depts, locs]) => {
+            setDepartmentsList(depts);
+            setLocationsList(locs);
+        }).catch(err => {
+            console.error("Failed to fetch initial data:", err);
+            toast.error("Failed to fetch initial data.");
+        });
     }, []);
 
     const handleChange = e => {
         const { name, value } = e.target;
-        setError("");
 
         if (name === "department") {
             setFormData(p => ({ ...p, department: value, category: "", urgency: "Normal" }));
-            fetch(`https://gmp-lnmiit.vercel.app/api/grievances/categories/${value}`)
+            fetch(`http://localhost:3000/api/grievances/categories/${value}`)
                 .then(res => res.json())
                 .then(setCategoriesList)
-                .catch(err => console.error("Cat fetch failed:", err));
+                .catch(err => {
+                    console.error("Cat fetch failed:", err);
+                    toast.error("Failed to fetch categories.");
+                });
         }
         else if (name === "category") {
             const catId = parseInt(value, 10);
@@ -106,7 +105,7 @@ export default function SubmitGrievance() {
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {
-            setError("File too large. Max size is 2MB.");
+            toast.error("File too large. Max size is 2MB.");
             setFormData(p => ({ ...p, attachment: null }));
             setPreviewUrl(null);
             return;
@@ -114,14 +113,12 @@ export default function SubmitGrievance() {
 
         setFormData(p => ({ ...p, attachment: file }));
         setPreviewUrl(URL.createObjectURL(file));
-        setError("");
     };
 
     const handleSubmit = async e => {
         e.preventDefault();
-        setError("");
         setSubmitting(true);
-
+        const toastId = toast.loading('Submitting grievance...');
         try {
             const data = new FormData();
             data.append("title", formData.title);
@@ -135,19 +132,23 @@ export default function SubmitGrievance() {
             data.append("email", userData.email);
             if (formData.attachment) data.append("attachment", formData.attachment);
 
-            const res = await fetch("https://gmp-lnmiit.vercel.app/api/grievances/submit", {
+            const res = await fetch("http://localhost:3000/api/grievances/submit", {
                 method: "POST",
                 body: data,
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || "Submission failed");
 
-            flashContext.showFlash((
-  <div style={{ textAlign: 'center', lineHeight: 1.6 }}>
-    <div style={{ fontWeight: 500, fontSize: '1.1rem' }}>Grievance Submitted Successfully</div>
-    <div style={{ marginTop: 6, fontSize: '1rem' }}>Ticket id- {json.ticket_id || "Error generating ticket id, check your mail!"}</div>
-  </div>
-), "success");
+            toast.success(
+                (t) => (
+                    <div>
+                        Grievance submitted successfully.
+                        <br />
+                        Ticket ID: <strong>{json.ticket_id}</strong>
+                    </div>
+                ),
+                { id: toastId, duration: 6000 }
+            );
 
             setFormData({
                 title: "",
@@ -164,7 +165,7 @@ export default function SubmitGrievance() {
             setPreviewUrl(null);
         } catch (err) {
             console.error(err);
-            setError(err.message);
+            toast.error(err.message, { id: toastId });
         } finally {
             setSubmitting(false);
         }
@@ -192,7 +193,6 @@ export default function SubmitGrievance() {
                 <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
                     Submit a Grievance
                 </h2>
-                {error && <div className="mb-4 text-center text-red-600">{error}</div>}
 
                 <div className="mb-8 p-6 bg-white rounded-xl shadow">
                     <h3 className="font-semibold text-lg mb-4">Complainant Information</h3>
@@ -287,7 +287,7 @@ export default function SubmitGrievance() {
                             required
                         >
                             <option value="">Select Location</option>
-                            {locations.map(loc => (
+                            {locationsList.map(loc => (
                                 <option key={loc} value={loc}>{loc}</option>
                             ))}
                         </select>

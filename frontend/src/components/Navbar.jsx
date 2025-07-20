@@ -2,16 +2,39 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import logo from "../assets/Logo_LNMIIT2.png"; // adjust path if needed
+import toast from 'react-hot-toast'; // Make sure toast is imported
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            // Optional: clear tokens or perform logout logic here
-            navigate("/");
-        }
+        // Display a toast notification for logout confirmation
+        toast((t) => (
+            <span className="flex flex-col items-center gap-2">
+                Are you sure you want to logout?
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id); // Dismiss the toast
+                            localStorage.clear(); // Clear session data
+                            navigate("/login"); // Redirect to login
+                        }}
+                        className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
+                    >
+                        Yes
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="bg-gray-300 text-black px-3 py-1 rounded-md text-sm"
+                    >
+                        No
+                    </button>
+                </div>
+            </span>
+        ), {
+            duration: 6000, // Keep the toast open for a bit longer
+        });
     };
 
     return (
@@ -38,6 +61,10 @@ export default function Navbar() {
                     </Link>
                     <Link to="/track-grievance" className="relative group">
                         <span className="hover:text-gray-600 transition-colors duration-200">Track Grievance</span>
+                        <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-gray-800 group-hover:w-full transition-all duration-300"></span>
+                    </Link>
+                    <Link to="/grievance-history" className="relative group">
+                        <span className="hover:text-gray-600 transition-colors duration-200">History</span>
                         <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-gray-800 group-hover:w-full transition-all duration-300"></span>
                     </Link>
                     <Link to="/about" className="relative group">
@@ -75,6 +102,7 @@ export default function Navbar() {
                     <Link to="/home" className="block hover:text-gray-600 transition-colors duration-200">Home</Link>
                     <Link to="/submit-grievance" className="block hover:text-gray-600 transition-colors duration-200">Submit Grievance</Link>
                     <Link to="/track-grievance" className="block hover:text-gray-600 transition-colors duration-200">Track Grievance</Link>
+                    <Link to="/grievance-history" className="block hover:text-gray-600 transition-colors duration-200">History</Link>
                     <Link to="/about" className="block hover:text-gray-600 transition-colors duration-200">About</Link>
                     <Link to="/faq" className="block hover:text-gray-600 transition-colors duration-200">FAQs</Link>
                     {/* Logout */}

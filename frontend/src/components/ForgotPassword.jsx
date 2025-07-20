@@ -1,9 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useContext } from "react";
-import { FlashContext } from "../App";
+import { useState, useEffect } from "react";
 import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
+import toast from 'react-hot-toast';
 
 export default function ForgotPassword() {
     const [isLoading, setIsLoading] = useState(false);
@@ -11,19 +11,35 @@ export default function ForgotPassword() {
     const [otpRequested, setOtpRequested] = useState(false);
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
+    const [countdown, setCountdown] = useState(0);
+    const [isResendDisabled, setIsResendDisabled] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        } else {
+            setIsResendDisabled(false);
+        }
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
+    const startCountdown = () => {
+        setCountdown(60);
+        setIsResendDisabled(true);
+    };
 
     const handleRequestOtp = async (e) => {
         e.preventDefault();
-        setErrorMessage("");
         if (!identifier) {
-            setErrorMessage("Please enter your email or mobile number.");
+            toast.error("Please enter your email.");
             return;
         }
 
+        const toastId = toast.loading('Requesting OTP...');
         try {
-            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/forgot-password", {
+            const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier }),
@@ -31,42 +47,54 @@ export default function ForgotPassword() {
             const data = await res.json();
 
             if (!res.ok) {
-                if (data.error && data.error.toLowerCase().includes("not found")) {
-                    setErrorMessage("User not registered. Please register below.");
-                } else {
-                    setErrorMessage(data.error || "Failed to request OTP.");
-                }
-                return;
+                throw new Error(data.error || "Failed to request OTP.");
             }
 
-            flashContext.showFlash(data.message, "success");
+            toast.success(data.message, { id: toastId });
             setOtpRequested(true);
+            startCountdown();
         } catch (err) {
-            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
-    setErrorMessage(err.message);
-    flashContext.showFlash(err.message, "error");
-} else {
-    setErrorMessage("Something went wrong, please try again.");
-    flashContext.showFlash("Something went wrong, please try again.", "error");
-}
+            toast.error(err.message, { id: toastId });
+        }
+    };
+
+    const handleResendOtp = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const toastId = toast.loading('Resending OTP...');
+        try {
+            const response = await fetch("http://localhost:3000/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ identifier }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Resend failed");
+
+            toast.success("OTP resent successfully", { id: toastId });
+            startCountdown();
+        } catch (err) {
+            toast.error("Error: " + err.message, { id: toastId });
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleReset = async (e) => {
         e.preventDefault();
-        setErrorMessage("");
         if (!otp) {
-            setErrorMessage("Please enter the OTP you received.");
+            toast.error("Please enter the OTP you received.");
             return;
         }
         if (!newPassword) {
-            setErrorMessage("Please enter a new password.");
+            toast.error("Please enter a new password.");
             return;
         }
 
         setIsLoading(true);
+        const toastId = toast.loading('Resetting password...');
         try {
-            const res = await fetch("https://gmp-lnmiit.vercel.app/api/auth/reset-password", {
+            const res = await fetch("http://localhost:3000/api/auth/reset-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier, otp, newPassword }),
@@ -74,20 +102,13 @@ export default function ForgotPassword() {
             const data = await res.json();
 
             if (!res.ok) {
-                setErrorMessage(data.error || "Failed to reset password.");
-                return;
+                throw new Error(data.error || "Failed to reset password.");
             }
 
-            flashContext.showFlash(data.message, "success");
+            toast.success(data.message, { id: toastId });
             navigate("/login");
         } catch (err) {
-            if (err && err.message && !err.message.toLowerCase().includes('failed to fetch')) {
-    setErrorMessage(err.message);
-    flashContext.showFlash(err.message, "error");
-} else {
-    setErrorMessage("Something went wrong, please try again.");
-    flashContext.showFlash("Something went wrong, please try again.", "error");
-}
+            toast.error(err.message, { id: toastId });
         } finally {
             setIsLoading(false);
         }
@@ -109,23 +130,19 @@ export default function ForgotPassword() {
                     </h2>
                 </div>
 
-                {errorMessage && (
-                    <div className="mb-4 text-center text-red-600">{errorMessage}</div>
-                )}
-
                 <form
                     onSubmit={otpRequested ? handleReset : handleRequestOtp}
                     className="space-y-4"
                 >
                     <div>
                         <label className="block mb-1 font-medium">
-                            Email or Mobile Number
+                            Email
                         </label>
                         <input
-                            type="text"
+                            type="email"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
-                            placeholder="Enter your registered email or mobile"
+                            placeholder="Enter your registered email"
                             className="w-full border px-4 py-2 rounded-xl"
                             required
                             disabled={otpRequested}
@@ -160,31 +177,35 @@ export default function ForgotPassword() {
                         </>
                     )}
 
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
-                    >
-                        {otpRequested ? "Reset Password" : "Request OTP"}
-                    </button>
+                    <div className="flex space-x-2">
+                        <button
+                            type="submit"
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
+                        >
+                            {otpRequested ? "Reset Password" : "Request OTP"}
+                        </button>
+                        {otpRequested && (
+                            <button
+                                type="button"
+                                onClick={handleResendOtp}
+                                className="flex-1 bg-gray-600 text-white py-2 rounded-xl hover:bg-gray-700 disabled:bg-gray-400"
+                                disabled={isResendDisabled}
+                            >
+                                {isResendDisabled ? `Resend in ${countdown}s` : "Resend OTP"}
+                            </button>
+                        )}
+                    </div>
+
                 </form>
 
-                {errorMessage.toLowerCase().includes("register") ? (
-                    <div className="mt-4 text-center">
-                        <p className="text-sm">Don’t have an account?</p>
-                        <Link to="/register" className="text-blue-600 font-medium">
-                            Register here
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="mt-4 text-center">
-                        <Link
-                            to="/login"
-                            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                        >
-                            Back to Login
-                        </Link>
-                    </div>
-                )}
+                <div className="mt-4 text-center">
+                    <Link
+                        to="/login"
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    >
+                        Back to Login
+                    </Link>
+                </div>
             </div>
 
             {isLoading && <OtpLoader />}
