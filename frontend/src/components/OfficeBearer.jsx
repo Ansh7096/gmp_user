@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, ChevronUp, Printer, X, UserPlus, FileSignature, Info, ArrowRightCircle, Plus } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Printer, X, UserPlus, FileSignature, Info, ArrowRightCircle, Plus, Paperclip } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
@@ -15,6 +15,12 @@ export default function OfficeBearer() {
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
+    const [filters, setFilters] = useState({
+        status: '',
+        urgency: '',
+        startDate: '',
+        endDate: ''
+    });
 
     // State for Transfer Modal
     const [isTransferModalOpen, setTransferModalOpen] = useState(false);
@@ -66,28 +72,66 @@ export default function OfficeBearer() {
             return;
         }
 
-        Promise.all([
-            fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json()),
-            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json()),
-            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json())
-        ]).then(([grievanceData, workerData, deptData]) => {
-            setGrievances(grievanceData);
-            setWorkers(workerData);
-            setDepartments(deptData);
-            setIsLoading(false);
-        }).catch(err => {
-            console.error("Fetch error:", err);
-            setError("Failed to fetch data from the server.");
-            toast.error("Failed to fetch data from the server.");
-            setIsLoading(false);
-        });
+        const fetchData = async () => {
+            try {
+                const [grievanceRes, workerRes, deptRes] = await Promise.all([
+                    fetch(`/api/grievances/department/${departmentId}`),
+                    fetch(`/api/grievances/workers/${departmentId}`),
+                    fetch('/api/grievances/departments')
+                ]);
+
+                if (!grievanceRes.ok || !workerRes.ok || !deptRes.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const grievanceData = await grievanceRes.json();
+                const workerData = await workerRes.json();
+                const deptData = await deptRes.json();
+
+                setGrievances(grievanceData);
+                setWorkers(workerData);
+                setDepartments(deptData);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setError("Failed to fetch data from the server.");
+                toast.error("Failed to fetch data from the server.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
     }, [departmentId, navigate]);
 
     const sortedAndFilteredGrievances = useMemo(() => {
         let sortableItems = [...grievances];
-        if (searchTerm) {
-            sortableItems = sortableItems.filter(g => g.ticket_id.toLowerCase().includes(searchTerm.toLowerCase()));
-        }
+        sortableItems = sortableItems.filter(g => {
+            const grievanceDate = new Date(g.created_at);
+            const startDate = filters.startDate ? new Date(filters.startDate) : null;
+            const endDate = filters.endDate ? new Date(filters.endDate) : null;
+
+            if (startDate) {
+                startDate.setHours(0, 0, 0, 0);
+                if (grievanceDate < startDate) return false;
+            }
+            if (endDate) {
+                endDate.setHours(23, 59, 59, 999);
+                if (grievanceDate > endDate) return false;
+            }
+
+            if (filters.status) {
+                if (filters.status === 'Escalated') {
+                    if (g.escalation_level === 0) return false;
+                } else if (g.status !== filters.status) {
+                    return false;
+                }
+            }
+
+            if (filters.urgency && g.urgency !== filters.urgency) return false;
+            if (searchTerm && !g.ticket_id.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+
+            return true;
+        });
         if (sortConfig.key !== null) {
             sortableItems.sort((a, b) => {
                 if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -96,7 +140,11 @@ export default function OfficeBearer() {
             });
         }
         return sortableItems;
-    }, [grievances, searchTerm, sortConfig]);
+    }, [grievances, searchTerm, sortConfig, filters]);
+
+    const handleFilterChange = (e) => {
+        setFilters({ ...filters, [e.target.name]: e.target.value });
+    };
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -125,7 +173,7 @@ export default function OfficeBearer() {
 
         const toastId = toast.loading("Transferring grievance...");
         try {
-            const res = await fetch(`${API_BASE_URL}/grievances/transfer`, {
+            const res = await fetch('/api/grievances/transfer', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -136,7 +184,7 @@ export default function OfficeBearer() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to transfer grievance.");
 
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setTransferModalOpen(false);
@@ -156,7 +204,7 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(selectedGrievance.ticket_id);
             const officeBearerEmail = localStorage.getItem("userEmail");
 
-            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/assign`, {
+            const res = await fetch(`/api/grievances/${encodedTicketId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -166,7 +214,7 @@ export default function OfficeBearer() {
             });
             if (!res.ok) throw new Error("Failed to assign grievance.");
 
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setAssignModalOpen(false);
@@ -199,9 +247,9 @@ export default function OfficeBearer() {
         const toastId = toast.loading('Resolving grievance...');
         try {
             const encodedTicketId = encodeURIComponent(ticketId);
-            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
+            const res = await fetch(`/api/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
             toast.success("Grievance resolved successfully!", { id: toastId });
         } catch (err) {
@@ -213,7 +261,7 @@ export default function OfficeBearer() {
         e.preventDefault();
         const toastId = toast.loading('Adding worker...');
         try {
-            const res = await fetch(`${API_BASE_URL}/grievances/workers`, {
+            const res = await fetch('/api/grievances/workers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newWorker, department_id: departmentId }),
@@ -289,10 +337,32 @@ export default function OfficeBearer() {
                             <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition">Logout</button>
                         </div>
                     </div>
-                    <div className="mb-6 relative">
-                        <input type="text" placeholder="Search by Ticket ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+
+                    <div className="flex flex-wrap items-center gap-2 mb-4 p-4 bg-gray-50 rounded-lg">
+                        <input
+                            type="text"
+                            placeholder="Search by Ticket ID..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="p-2 border rounded-lg w-full md:w-auto flex-grow"
+                        />
+                        <select name="urgency" value={filters.urgency} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto">
+                            <option value="">All Urgencies</option>
+                            <option value="Normal">Normal</option>
+                            <option value="High">High</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                        <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto">
+                            <option value="">All Statuses</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Escalated">Escalated</option>
+                        </select>
+                        <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto" />
+                        <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto" />
                     </div>
+
                     <div className="overflow-x-auto">
                         <table className="min-w-full bg-white rounded-xl shadow text-left">
                             <thead className="bg-gray-200 text-gray-700">
@@ -313,7 +383,7 @@ export default function OfficeBearer() {
                                         <td className="py-3 px-4"><span className={`font-bold ${g.urgency === 'Emergency' ? 'text-red-600' : g.urgency === 'High' ? 'text-yellow-600' : 'text-green-600'}`}>{g.urgency}</span></td>
                                         <td className="py-3 px-4"><span className={`px-3 py-1 rounded-full text-xs font-medium ${g.escalation_level > 0 ? 'bg-red-200 text-red-800' : g.status === "Submitted" ? "bg-yellow-200 text-yellow-800" : g.status === "In Progress" ? "bg-blue-200 text-blue-800" : "bg-green-200 text-green-800"}`}>{g.escalation_level > 0 ? 'Escalated' : g.status}</span></td>
                                         <td className="py-3 px-4">{new Date(g.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-                                        <td className="py-3 px-4 flex gap-2">
+                                        <td className="py-3 px-4 flex gap-2 items-center">
                                             {g.escalation_level > 0 ? (
                                                 <span className="text-red-500 font-bold px-3 py-1">Locked</span>
                                             ) : (
@@ -329,6 +399,11 @@ export default function OfficeBearer() {
                                                         <button onClick={() => openInfoModal(g)} className="bg-gray-400 text-white p-2 rounded-full shadow hover:bg-gray-500 transition"><Info size={14} /></button>
                                                     )}
                                                 </>
+                                            )}
+                                            {g.attachment && (
+                                                <a href={g.attachment} target="_blank" rel="noopener noreferrer" className="bg-purple-500 text-white p-2 rounded shadow hover:bg-purple-600 transition">
+                                                    <Paperclip size={16} />
+                                                </a>
                                             )}
                                             <button onClick={() => handlePrint(g)} className="bg-gray-500 text-white p-2 rounded shadow hover:bg-gray-600 transition"><Printer size={16} /></button>
                                         </td>
@@ -415,6 +490,14 @@ export default function OfficeBearer() {
                                 hour: 'numeric', minute: 'numeric', hour12: true
                             })}
                         </p>
+                        {selectedGrievance.attachment && (
+                            <p>
+                                <strong>Attachment:</strong>{' '}
+                                <a href={selectedGrievance.attachment} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    View Attachment
+                                </a>
+                            </p>
+                        )}
                     </div>
                 )}
             </Modal>
