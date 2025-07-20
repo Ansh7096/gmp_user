@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function OfficeBearer() {
     const [grievances, setGrievances] = useState([]);
     const [workers, setWorkers] = useState([]);
@@ -13,12 +15,6 @@ export default function OfficeBearer() {
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
-    const [filters, setFilters] = useState({
-        status: '',
-        urgency: '',
-        startDate: '',
-        endDate: ''
-    });
 
     // State for Transfer Modal
     const [isTransferModalOpen, setTransferModalOpen] = useState(false);
@@ -71,9 +67,9 @@ export default function OfficeBearer() {
         }
 
         Promise.all([
-            fetch(`/api/grievances/department/${departmentId}`).then(res => res.json()),
-            fetch(`/api/grievances/workers/${departmentId}`).then(res => res.json()),
-            fetch('/api/grievances/departments').then(res => res.json())
+            fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json())
         ]).then(([grievanceData, workerData, deptData]) => {
             setGrievances(grievanceData);
             setWorkers(workerData);
@@ -89,33 +85,9 @@ export default function OfficeBearer() {
 
     const sortedAndFilteredGrievances = useMemo(() => {
         let sortableItems = [...grievances];
-        sortableItems = sortableItems.filter(g => {
-            const grievanceDate = new Date(g.created_at);
-            const startDate = filters.startDate ? new Date(filters.startDate) : null;
-            const endDate = filters.endDate ? new Date(filters.endDate) : null;
-
-            if (startDate) {
-                startDate.setHours(0, 0, 0, 0);
-                if (grievanceDate < startDate) return false;
-            }
-            if (endDate) {
-                endDate.setHours(23, 59, 59, 999);
-                if (grievanceDate > endDate) return false;
-            }
-
-            if (filters.status) {
-                if (filters.status === 'Escalated') {
-                    if (g.escalation_level === 0) return false;
-                } else if (g.status !== filters.status) {
-                    return false;
-                }
-            }
-
-            if (filters.urgency && g.urgency !== filters.urgency) return false;
-            if (searchTerm && !g.ticket_id.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-
-            return true;
-        });
+        if (searchTerm) {
+            sortableItems = sortableItems.filter(g => g.ticket_id.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
         if (sortConfig.key !== null) {
             sortableItems.sort((a, b) => {
                 if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -124,11 +96,7 @@ export default function OfficeBearer() {
             });
         }
         return sortableItems;
-    }, [grievances, searchTerm, sortConfig, filters]);
-
-    const handleFilterChange = (e) => {
-        setFilters({ ...filters, [e.target.name]: e.target.value });
-    };
+    }, [grievances, searchTerm, sortConfig]);
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -157,7 +125,7 @@ export default function OfficeBearer() {
 
         const toastId = toast.loading("Transferring grievance...");
         try {
-            const res = await fetch('/api/grievances/transfer', {
+            const res = await fetch(`${API_BASE_URL}/grievances/transfer`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -168,7 +136,7 @@ export default function OfficeBearer() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to transfer grievance.");
 
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setTransferModalOpen(false);
@@ -188,7 +156,7 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(selectedGrievance.ticket_id);
             const officeBearerEmail = localStorage.getItem("userEmail");
 
-            const res = await fetch(`/api/grievances/${encodedTicketId}/assign`, {
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -198,7 +166,7 @@ export default function OfficeBearer() {
             });
             if (!res.ok) throw new Error("Failed to assign grievance.");
 
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setAssignModalOpen(false);
@@ -231,9 +199,9 @@ export default function OfficeBearer() {
         const toastId = toast.loading('Resolving grievance...');
         try {
             const encodedTicketId = encodeURIComponent(ticketId);
-            const res = await fetch(`/api/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
+            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
-            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
             toast.success("Grievance resolved successfully!", { id: toastId });
         } catch (err) {
@@ -245,7 +213,7 @@ export default function OfficeBearer() {
         e.preventDefault();
         const toastId = toast.loading('Adding worker...');
         try {
-            const res = await fetch('/api/grievances/workers', {
+            const res = await fetch(`${API_BASE_URL}/grievances/workers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newWorker, department_id: departmentId }),
@@ -321,32 +289,10 @@ export default function OfficeBearer() {
                             <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition">Logout</button>
                         </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2 mb-4 p-4 bg-gray-50 rounded-lg">
-                        <input
-                            type="text"
-                            placeholder="Search by Ticket ID..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="p-2 border rounded-lg w-full md:w-auto flex-grow"
-                        />
-                        <select name="urgency" value={filters.urgency} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto">
-                            <option value="">All Urgencies</option>
-                            <option value="Normal">Normal</option>
-                            <option value="High">High</option>
-                            <option value="Emergency">Emergency</option>
-                        </select>
-                        <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto">
-                            <option value="">All Statuses</option>
-                            <option value="Submitted">Submitted</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Escalated">Escalated</option>
-                        </select>
-                        <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto" />
-                        <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} className="p-2 border rounded-lg w-full md:w-auto" />
+                    <div className="mb-6 relative">
+                        <input type="text" placeholder="Search by Ticket ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     </div>
-
                     <div className="overflow-x-auto">
                         <table className="min-w-full bg-white rounded-xl shadow text-left">
                             <thead className="bg-gray-200 text-gray-700">
