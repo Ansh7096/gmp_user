@@ -11,7 +11,7 @@ const Modal = ({ isOpen, onClose, title, icon, children }) => {
     if (!isOpen) return null;
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex justify-center items-center"
+            className="fixed inset-0 bg-red-blue bg-opacity-25 backdrop-blur-sm flex justify-center items-center"
             style={{ zIndex: 1000 }} // Ensure modal is on top
         >
             <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 border border-gray-200 animate-enter">
