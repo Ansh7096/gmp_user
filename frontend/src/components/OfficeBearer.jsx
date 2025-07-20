@@ -5,8 +5,6 @@ import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export default function OfficeBearer() {
     const [grievances, setGrievances] = useState([]);
     const [workers, setWorkers] = useState([]);
@@ -73,9 +71,9 @@ export default function OfficeBearer() {
         }
 
         Promise.all([
-            fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json()),
-            fetch(`${API_BASE_URL}/grievances/workers/${departmentId}`).then(res => res.json()),
-            fetch(`${API_BASE_URL}/grievances/departments`).then(res => res.json())
+            fetch(`/api/grievances/department/${departmentId}`).then(res => res.json()),
+            fetch(`/api/grievances/workers/${departmentId}`).then(res => res.json()),
+            fetch('/api/grievances/departments').then(res => res.json())
         ]).then(([grievanceData, workerData, deptData]) => {
             setGrievances(grievanceData);
             setWorkers(workerData);
@@ -159,7 +157,7 @@ export default function OfficeBearer() {
 
         const toastId = toast.loading("Transferring grievance...");
         try {
-            const res = await fetch(`${API_BASE_URL}/grievances/transfer`, {
+            const res = await fetch('/api/grievances/transfer', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -170,7 +168,7 @@ export default function OfficeBearer() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to transfer grievance.");
 
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setTransferModalOpen(false);
@@ -190,7 +188,7 @@ export default function OfficeBearer() {
             const encodedTicketId = encodeURIComponent(selectedGrievance.ticket_id);
             const officeBearerEmail = localStorage.getItem("userEmail");
 
-            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/assign`, {
+            const res = await fetch(`/api/grievances/${encodedTicketId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -200,7 +198,7 @@ export default function OfficeBearer() {
             });
             if (!res.ok) throw new Error("Failed to assign grievance.");
 
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
 
             setAssignModalOpen(false);
@@ -233,9 +231,9 @@ export default function OfficeBearer() {
         const toastId = toast.loading('Resolving grievance...');
         try {
             const encodedTicketId = encodeURIComponent(ticketId);
-            const res = await fetch(`${API_BASE_URL}/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
+            const res = await fetch(`/api/grievances/${encodedTicketId}/resolve`, { method: 'PUT' });
             if (!res.ok) throw new Error("Failed to resolve grievance.");
-            const refreshedGrievances = await fetch(`${API_BASE_URL}/grievances/department/${departmentId}`).then(res => res.json());
+            const refreshedGrievances = await fetch(`/api/grievances/department/${departmentId}`).then(res => res.json());
             setGrievances(refreshedGrievances);
             toast.success("Grievance resolved successfully!", { id: toastId });
         } catch (err) {
@@ -247,7 +245,7 @@ export default function OfficeBearer() {
         e.preventDefault();
         const toastId = toast.loading('Adding worker...');
         try {
-            const res = await fetch(`${API_BASE_URL}/grievances/workers`, {
+            const res = await fetch('/api/grievances/workers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newWorker, department_id: departmentId }),
@@ -276,7 +274,24 @@ export default function OfficeBearer() {
 
     const handlePrint = (grievance) => {
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`...`); // Print content
+        printWindow.document.write(`
+            <html>
+                <head><title>Grievance Details - ${grievance.ticket_id}</title><style>body{font-family:sans-serif;padding:20px}h1,h2{color:#333;border-bottom:2px solid #eee;padding-bottom:5px}p{line-height:1.6}strong{color:#555}.grievance-details{margin-top:20px}.attachment-link{display:block;margin-top:15px}.signature-box{float:right;text-align:center;width:250px;margin-top:80px;border-top:1px solid #000;padding-top:5px}</style></head>
+                <body>
+                    <h1>Grievance Report</h1><h2>Ticket ID: ${grievance.ticket_id}</h2>
+                    <div class="grievance-details">
+                        <p><strong>Title:</strong> ${grievance.title}</p><p><strong>Status:</strong> ${grievance.status}</p><p><strong>Urgency:</strong> ${grievance.urgency}</p>
+                        <p><strong>Submitted On:</strong> ${new Date(grievance.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+                        <p><strong>Category:</strong> ${grievance.category_name}</p><p><strong>Location:</strong> ${grievance.location}</p><hr>
+                        <p><strong>Complainant:</strong> ${grievance.complainant_name}</p>
+                        <p><strong>Roll Number:</strong> ${grievance.roll_number || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${grievance.email}</p><p><strong>Mobile:</strong> ${grievance.mobile_number}</p><hr>
+                        <h3>Description</h3><p>${grievance.description}</p>
+                        ${grievance.attachment ? `<a href="${grievance.attachment}" target="_blank" class="attachment-link">View Attachment</a>` : '<p>No attachment provided.</p>'}
+                        <div class="signature-box">Signature (if satisfied)</div>
+                    </div>
+                </body>
+            </html>`);
         printWindow.document.close();
         printWindow.print();
     };
