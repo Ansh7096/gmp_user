@@ -18,6 +18,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/grievances', grievanceRoutes);
 app.use('/uploads', express.static('uploads'));
 
+app.get('/', (req, res) => {
+    res.send('Welcome to the Grievance Management System!')
+})
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
