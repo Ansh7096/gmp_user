@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+// Define the base URL using the environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const GrievanceHistory = () => {
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +21,8 @@ const GrievanceHistory = () => {
 
         const fetchHistory = async () => {
             try {
-                const response = await fetch(`/api/grievances/history/${userEmail}`);
+                // Use the full, correct URL for the API call
+                const response = await fetch(`${API_BASE_URL}/grievances/history/${userEmail}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch grievance history');
                 }
