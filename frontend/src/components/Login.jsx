@@ -5,6 +5,7 @@ import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
 import toast from 'react-hot-toast';
 
+// Use the environment variable for the API URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Login() {
@@ -49,6 +50,7 @@ export default function Login() {
         setIsLoading(true);
         const toastId = toast.loading('Requesting OTP...');
         try {
+            // Use the API_BASE_URL for the fetch call
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
