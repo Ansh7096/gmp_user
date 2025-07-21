@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 import {
   BrowserRouter as Router,
   Routes,
