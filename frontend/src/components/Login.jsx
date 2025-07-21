@@ -6,7 +6,7 @@ import OtpLoader from "./OtpLoader";
 import toast from 'react-hot-toast';
 
 // Use the environment variable for the API URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function Login() {
     const [isLoading, setIsLoading] = useState(false);

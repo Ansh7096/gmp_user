@@ -4,7 +4,7 @@ import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function Register() {
     const navigate = useNavigate();

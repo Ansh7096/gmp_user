@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal'; // Import the new shared Modal
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 // Helper for downloading CSV
 const downloadCSV = (data, filename = 'report.csv') => {

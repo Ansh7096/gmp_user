@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Analytics } from "@vercel/analytics/react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -73,7 +72,6 @@ function AppContent() {
     <>
       {!hideNavbar && <Navbar />}
       <Toaster position="top-center" reverseOrder={false} />
-      <Analytics />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />

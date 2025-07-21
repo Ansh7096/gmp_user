@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function SubmitGrievance() {
     const [locationsList, setLocationsList] = useState([]);

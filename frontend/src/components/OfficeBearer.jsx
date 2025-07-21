@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function OfficeBearer() {
     const [grievances, setGrievances] = useState([]);
