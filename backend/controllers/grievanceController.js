@@ -164,19 +164,26 @@ export const assignGrievance = async (req, res, next) => {
         const { ticketId } = req.params;
         const { workerId, officeBearerEmail } = req.body;
         updateGrievanceStatus(ticketId, 'In Progress', workerId, async (err) => {
-            if (err) throw err;
-            const [grievanceDetails] = await db.promise().query('SELECT g.*, c.name as category_name, w.name AS worker_name, w.email AS worker_email, w.phone_number AS worker_phone, u.roll_number FROM grievances g LEFT JOIN categories c ON g.category_id = c.id LEFT JOIN workers w ON g.assigned_worker_id = w.id LEFT JOIN users u ON g.email = u.email WHERE g.ticket_id = ?', [ticketId]);
-            const [bearerDetails] = await db.promise().query('SELECT name, email, mobile_number FROM office_bearers WHERE email = ?', [officeBearerEmail]);
-            if (grievanceDetails.length) {
-                const grievance = grievanceDetails[0];
-                const worker = { name: grievance.worker_name, email: grievance.worker_email, phone_number: grievance.worker_phone };
-                const officeBearer = bearerDetails.length ? bearerDetails[0] : null;
-                sendGrievanceAssignedEmailToUser(grievance.email, grievance.complainant_name, ticketId, worker).catch(console.error);
-                if (officeBearer) {
-                    sendGrievanceAssignedEmailToWorker(worker.email, worker.name, ticketId, grievance, officeBearer).catch(console.error);
-                }
+            if (err) {
+                return next(new ErrorResponse('Failed to update grievance status.', 500));
             }
-            res.status(200).json({ message: 'Grievance assigned successfully' });
+            try {
+                const [grievanceDetails] = await db.promise().query('SELECT g.*, c.name as category_name, w.name AS worker_name, w.email AS worker_email, w.phone_number AS worker_phone, u.roll_number FROM grievances g LEFT JOIN categories c ON g.category_id = c.id LEFT JOIN workers w ON g.assigned_worker_id = w.id LEFT JOIN users u ON g.email = u.email WHERE g.ticket_id = ?', [ticketId]);
+                const [bearerDetails] = await db.promise().query('SELECT name, email, mobile_number FROM office_bearers WHERE email = ?', [officeBearerEmail]);
+                if (grievanceDetails.length) {
+                    const grievance = grievanceDetails[0];
+                    const worker = { name: grievance.worker_name, email: grievance.worker_email, phone_number: grievance.worker_phone };
+                    const officeBearer = bearerDetails.length ? bearerDetails[0] : null;
+                    await sendGrievanceAssignedEmailToUser(grievance.email, grievance.complainant_name, ticketId, worker);
+                    if (officeBearer) {
+                        await sendGrievanceAssignedEmailToWorker(worker.email, worker.name, ticketId, grievance, officeBearer);
+                    }
+                }
+                res.status(200).json({ message: 'Grievance assigned successfully' });
+            } catch (emailError) {
+                console.error("Email sending failed:", emailError);
+                return next(new ErrorResponse('Grievance assigned, but failed to send notification emails.', 500));
+            }
         });
     } catch (err) {
         next(err);
@@ -187,13 +194,20 @@ export const resolveGrievance = async (req, res, next) => {
     try {
         const { ticketId } = req.params;
         updateGrievanceStatus(ticketId, 'Resolved', null, async (err) => {
-            if (err) throw err;
-            const [details] = await db.promise().query('SELECT email, complainant_name FROM grievances WHERE ticket_id = ?', [ticketId]);
-            if (details.length) {
-                const grievance = details[0];
-                sendGrievanceStatusUpdateEmail(grievance.email, grievance.complainant_name, ticketId, 'Resolved').catch(console.error);
+            if (err) {
+                return next(new ErrorResponse('Failed to update grievance status.', 500));
             }
-            res.status(200).json({ message: 'Grievance resolved successfully' });
+            try {
+                const [details] = await db.promise().query('SELECT email, complainant_name FROM grievances WHERE ticket_id = ?', [ticketId]);
+                if (details.length) {
+                    const grievance = details[0];
+                    await sendGrievanceStatusUpdateEmail(grievance.email, grievance.complainant_name, ticketId, 'Resolved');
+                }
+                res.status(200).json({ message: 'Grievance resolved successfully' });
+            } catch (emailError) {
+                console.error("Email sending failed:", emailError);
+                return next(new ErrorResponse('Grievance resolved, but failed to send notification email.', 500));
+            }
         });
     } catch (err) {
         next(err);
