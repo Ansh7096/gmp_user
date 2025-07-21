@@ -113,25 +113,3 @@ export const checkAndEscalateGrievances = async () => {
         console.error('Error during grievance escalation process:', err);
     }
 };
-
-
-/**
- * This block checks if the script is being run directly from the command line.
- * If so, it executes the escalation check and then closes the database connection
- * to allow the Node.js process to terminate.
- */
-const isRunDirectly = fileURLToPath(import.meta.url) === process.argv[1];
-if (isRunDirectly) {
-    console.log('Running escalation script manually from command line...');
-    checkAndEscalateGrievances()
-        .then(() => {
-            console.log('Manual run finished.');
-        })
-        .catch(err => {
-            console.error('Manual run failed with an error:', err);
-        })
-        .finally(() => {
-            // Always try to close the connection pool
-            db.end();
-        });
-}
