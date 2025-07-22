@@ -2,12 +2,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import cron from 'node-cron';
+// import cron from 'node-cron'; // REMOVE THIS LINE
 import { db } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import grievanceRoutes from './routes/grievanceRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
-import { checkAndEscalateGrievances } from './scripts/escalationCron.js';
+// import { checkAndEscalateGrievances } from './scripts/escalationCron.js'; // REMOVE THIS LINE
 
 dotenv.config();
 
@@ -24,6 +24,14 @@ app.locals.db = db;
 app.use('/api/auth', authRoutes);
 app.use('/api/grievances', grievanceRoutes);
 
+// --- NEW ---
+// Add the new cron job route.
+// Note: Vercel might handle routing directly via the /api directory,
+// but adding it here ensures it works in local development too.
+import cronHandler from './api/cron.js';
+app.post('/api/cron', cronHandler);
+
+
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
 
@@ -39,14 +47,14 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 
-    // --- AUTOMATED ESCALATION JOB ---
-    console.log('Starting automated grievance escalation job...');
-
-    // Schedule the escalation check to run every 30 minutes.
-    cron.schedule('*/30 * * * *', () => {
-        console.log('Performing scheduled escalation check.');
-        checkAndEscalateGrievances();
-    });
-
-    console.log(`Escalation check scheduled to run every 30 minutes.`);
+    // --- REMOVE THE ENTIRE AUTOMATED ESCALATION JOB BLOCK ---
+    // console.log('Starting automated grievance escalation job...');
+    // cron.schedule('*/30 * * * *', () => {
+    //     console.log('Performing scheduled escalation check.');
+    //     checkAndEscalateGrievances();
+    // });
+    // console.log(`Escalation check scheduled to run every 30 minutes.`);
 });
+
+// Export the app for Vercel
+export default app;
