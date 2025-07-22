@@ -12,7 +12,7 @@ import ErrorResponse from '../utils/errorResponse.js';
 export default async function handler(req, res, next) {
     // 1. Authorization Check: Ensure the request comes from Vercel Cron
     const authHeader = req.headers.authorization;
-    if (req.method !== 'POST' || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (req.method !== 'GET' || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         // Use the existing ErrorResponse for consistent error handling
         return next(new ErrorResponse('Unauthorized', 401));
     }
