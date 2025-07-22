@@ -29,7 +29,7 @@ app.use('/api/grievances', grievanceRoutes);
 // Note: Vercel might handle routing directly via the /api directory,
 // but adding it here ensures it works in local development too.
 import cronHandler from './api/cron.js';
-app.post('/api/cron', cronHandler);
+app.get('/api/cron', cronHandler);
 
 
 // Serve uploaded files statically
