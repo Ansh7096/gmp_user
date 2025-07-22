@@ -7,10 +7,7 @@
         },
         {
             "src": "frontend/package.json",
-            "use": "@vercel/vite",
-            "config": {
-                "maxLambdaSize": "15mb"
-            }
+            "use": "@vercel/vite"
         }
     ],
     "rewrites": [
