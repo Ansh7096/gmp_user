@@ -12,8 +12,18 @@ dotenv.config();
 
 const app = express();
 
-// Middleware setup
-app.use(cors());
+// --- IMPORTANT: CORS Configuration for Separate Deployments ---
+// This tells your backend to accept requests ONLY from your deployed frontend.
+// This is crucial for security and for your login to work.
+const corsOptions = {
+    origin: 'https://gmp-user-ui41.vercel.app', // Your exact frontend URL
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+// -----------------------------------------------------------
+
+// Standard Middleware
 app.use(express.json());
 
 // Make the database connection available to routes
@@ -26,24 +36,25 @@ app.use('/api/grievances', grievanceRoutes);
 // Vercel Cron Job Route
 app.get('/api/cron', cronHandler);
 
-// Serve uploaded files statically
+// Serve uploaded files statically (if you have an 'uploads' directory)
 app.use('/uploads', express.static('uploads'));
 
 // Custom error handler middleware
 app.use(errorHandler);
 
+// A root endpoint for health checks
 app.get('/', (req, res) => {
-    res.send('Welcome to the Grievance Management System API!')
+    res.send('Welcome to the Grievance Management System API!');
 });
 
 const PORT = process.env.PORT || 3000;
 
-// Start server only in local development, Vercel handles it in production
+// This check ensures app.listen() only runs locally and not on Vercel
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        console.log(`Server running locally on port ${PORT}`);
     });
 }
 
-// Export the app for Vercel
+// Export the app for Vercel's serverless environment
 export default app;
