@@ -2,25 +2,14 @@
     "version": 2,
     "builds": [
         {
-            "src": "frontend/package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist"
-            }
-        },
-        {
-            "src": "backend/app.js",
+            "src": "app.js",
             "use": "@vercel/node"
         }
     ],
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/backend/app.js"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/frontend/index.html"
+            "destination": "/app.js"
         }
     ],
     "crons": [
