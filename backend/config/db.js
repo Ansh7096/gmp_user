@@ -1,31 +1,76 @@
-import mysql from 'mysql2/promise';
+import mysql from 'mysql2';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create a connection pool. This is more efficient than creating a new connection
-// for every request, and mysql2/promise handles the connection management.
-const pool = mysql.createPool({
+let pool;
+
+const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
-    timezone: "+05:30", // Ensure your database server is also set to a consistent timezone
+    timezone: "+05:30",
     waitForConnections: true,
-    connectionLimit: 10, // Default is 10, adjust if needed
+    connectionLimit: 10,
     queueLimit: 0
-});
+};
 
-console.log('MySQL Pool configured.');
+function handleDisconnect() {
+    pool = mysql.createPool(dbConfig);
 
-// Export the promise-based pool directly.
-// You can also add a legacy query function if other parts of your app need it.
+    pool.getConnection((err, connection) => {
+        if (err) {
+            console.error('DB Pool Connection Failed:', err);
+            // Retry connection after a short delay
+            setTimeout(handleDisconnect, 2000);
+        }
+        if (connection) {
+            connection.release();
+            console.log('MySQL Pool Connected Successfully');
+        }
+    });
+
+    pool.on('error', function (err) {
+        console.error('Database Pool Error:', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET') {
+            // Connection lost. Re-establish the pool.
+            console.log('Reconnecting to the database...');
+            handleDisconnect();
+        } else {
+            throw err;
+        }
+    });
+}
+
+// Initialize the connection pool
+handleDisconnect();
+
 export const db = {
-    promise: () => pool,
     query: (sql, params, callback) => {
-        pool.query(sql, params)
-            .then(([results]) => callback(null, results))
-            .catch(err => callback(err, null));
+        pool.query(sql, params, (error, results) => {
+            if (error) {
+                console.error('Database Query Error:', error);
+            }
+            callback(error, results);
+        });
+    },
+    promise: () => pool.promise(),
+    /**
+     * Closes the connection pool.
+     * This should be called when the application is shutting down
+     * or when a script has finished its task.
+     */
+    end: () => {
+        if (pool) {
+            pool.end(err => {
+                if (err) {
+                    console.error('Error closing the database pool:', err);
+                    return;
+                }
+                console.log('Database pool closed.');
+            });
+        }
     }
 };
