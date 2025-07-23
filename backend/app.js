@@ -49,12 +49,12 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// This check ensures app.listen() only runs locally and not on Vercel
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server running locally on port ${PORT}`);
     });
 }
 
-// Export the app for Vercel's serverless environment
+
 export default app;

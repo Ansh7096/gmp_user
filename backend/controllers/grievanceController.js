@@ -238,8 +238,12 @@ export const revertGrievance = async (req, res, next) => {
         const departmentName = grievanceRows[0].department_name;
         const [bearers] = await db.promise().query('SELECT email FROM office_bearers WHERE department = ?', [departmentName]);
         const bearerEmails = bearers.map(b => b.email);
-        const sql = "UPDATE grievances SET resolution_deadline = ?, escalation_level = 0, updated_at = NOW() WHERE ticket_id = ?";
+
+        // FIX: The SQL query now resets the status to 'Submitted' and clears the worker assignment.
+        const sql = "UPDATE grievances SET status = 'Submitted', assigned_worker_id = NULL, resolution_deadline = ?, escalation_level = 0, updated_at = NOW() WHERE ticket_id = ?";
+
         await db.promise().query(sql, [new_resolution_deadline, ticketId]);
+
         if (bearerEmails.length > 0) {
             await sendRevertToOfficeBearerEmail(grievanceRows[0], comment, authorityEmail, bearerEmails);
         }
