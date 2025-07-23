@@ -1,3 +1,4 @@
+// ansh7096/gmp_user/gmp_user-002da191e25f5520793e0a033b92a8b7c4992035/frontend/src/components/Register.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/Logo_LNMIIT2.png";
@@ -23,7 +24,7 @@ export default function Register() {
         e.preventDefault();
         const toastId = toast.loading('Registering...');
         try {
-            const res = await axios.post("/auth/register", formData);
+            const res = await axios.post("/api/auth/register", formData);
 
             toast.success("Registration successful ✅", { id: toastId });
             setFormData({

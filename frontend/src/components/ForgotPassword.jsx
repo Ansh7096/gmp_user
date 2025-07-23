@@ -1,3 +1,4 @@
+// ansh7096/gmp_user/gmp_user-002da191e25f5520793e0a033b92a8b7c4992035/frontend/src/components/ForgotPassword.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import logo from "../assets/Logo_LNMIIT2.png";
@@ -40,7 +41,7 @@ export default function ForgotPassword() {
 
         const toastId = toast.loading('Requesting OTP...');
         try {
-            const res = await axios.post("/auth/forgot-password", { identifier });
+            const res = await axios.post("/api/auth/forgot-password", { identifier });
 
             toast.success(res.data.message, { id: toastId });
             setOtpRequested(true);
@@ -56,7 +57,7 @@ export default function ForgotPassword() {
         setIsLoading(true);
         const toastId = toast.loading('Resending OTP...');
         try {
-            await axios.post("/auth/forgot-password", { identifier });
+            await axios.post("/api/auth/forgot-password", { identifier });
 
             toast.success("OTP resent successfully", { id: toastId });
             startCountdown();
@@ -82,7 +83,7 @@ export default function ForgotPassword() {
         setIsLoading(true);
         const toastId = toast.loading('Resetting password...');
         try {
-            const res = await axios.post("/auth/reset-password", { identifier, otp, newPassword });
+            const res = await axios.post("/api/auth/reset-password", { identifier, otp, newPassword });
 
             toast.success(res.data.message, { id: toastId });
             navigate("/login");
