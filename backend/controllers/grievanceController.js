@@ -222,15 +222,23 @@ export const getEscalatedGrievances = (req, res, next) => {
     });
 };
 
+// backend/controllers/grievanceController.js
+
 export const revertGrievance = async (req, res, next) => {
     const { ticketId } = req.params;
     const { new_resolution_days, comment, authorityEmail } = req.body;
-    if (!comment || !new_resolution_days) {
-        return next(new ErrorResponse('Comment and new resolution days are required.', 400));
+    if (!comment || !new_resolution_days || new_resolution_days <= 0) {
+        return next(new ErrorResponse('Comment and a valid number of new resolution days are required.', 400));
     }
     try {
+        // Calculate resolution deadline in working hours
         const new_resolution_hours = new_resolution_days * 24;
         const new_resolution_deadline = calculateDeadline(new_resolution_hours);
+
+        // **NEW LOGIC**: Calculate response deadline as half of the resolution deadline
+        const new_response_hours = new_resolution_hours / 2;
+        const new_response_deadline = calculateDeadline(new_response_hours);
+
         const [grievanceRows] = await db.promise().query('SELECT g.ticket_id, d.name as department_name FROM grievances g JOIN departments d ON g.department_id = d.id WHERE g.ticket_id = ?', [ticketId]);
         if (grievanceRows.length === 0) {
             return next(new ErrorResponse('Grievance not found.', 404));
@@ -239,15 +247,23 @@ export const revertGrievance = async (req, res, next) => {
         const [bearers] = await db.promise().query('SELECT email FROM office_bearers WHERE department = ?', [departmentName]);
         const bearerEmails = bearers.map(b => b.email);
 
-        // FIX: The SQL query now resets the status to 'Submitted' and clears the worker assignment.
-        const sql = "UPDATE grievances SET status = 'Submitted', assigned_worker_id = NULL, resolution_deadline = ?, escalation_level = 0, updated_at = NOW() WHERE ticket_id = ?";
-
-        await db.promise().query(sql, [new_resolution_deadline, ticketId]);
+        const sql = `
+            UPDATE grievances 
+            SET 
+                status = 'Submitted', 
+                assigned_worker_id = NULL, 
+                response_deadline = ?, 
+                resolution_deadline = ?, 
+                escalation_level = 0, 
+                updated_at = NOW() 
+            WHERE ticket_id = ?
+        `;
+        await db.promise().query(sql, [new_response_deadline, new_resolution_deadline, ticketId]);
 
         if (bearerEmails.length > 0) {
             await sendRevertToOfficeBearerEmail(grievanceRows[0], comment, authorityEmail, bearerEmails);
         }
-        res.status(200).json({ message: 'Grievance reverted with new resolution time and office bearers notified.' });
+        res.status(200).json({ message: 'Grievance reverted with new deadlines and office bearers notified.' });
     } catch (err) {
         next(err);
     }
@@ -343,17 +359,34 @@ export const getLevel2Grievances = (req, res, next) => {
     });
 };
 
+// backend/controllers/grievanceController.js
+
 export const revertToLevel1 = async (req, res, next) => {
     const { ticketId } = req.params;
     const { new_resolution_days, comment, adminEmail } = req.body;
-    if (!comment || !new_resolution_days) {
-        return next(new ErrorResponse('Comment and new resolution days are required.', 400));
+    if (!comment || !new_resolution_days || new_resolution_days <= 0) {
+        return next(new ErrorResponse('Comment and a valid number of new resolution days are required.', 400));
     }
     try {
+        // Calculate resolution deadline in working hours
         const new_resolution_hours = new_resolution_days * 24;
         const new_resolution_deadline = calculateDeadline(new_resolution_hours);
-        const updateSql = "UPDATE grievances SET resolution_deadline = ?, escalation_level = 1, updated_at = NOW() WHERE ticket_id = ?";
-        await db.promise().query(updateSql, [new_resolution_deadline, ticketId]);
+
+        // **NEW LOGIC**: Calculate response deadline as half of the resolution deadline
+        const new_response_hours = new_resolution_hours / 2;
+        const new_response_deadline = calculateDeadline(new_response_hours);
+
+        const updateSql = `
+            UPDATE grievances 
+            SET 
+                response_deadline = ?, 
+                resolution_deadline = ?, 
+                escalation_level = 1, 
+                updated_at = NOW() 
+            WHERE ticket_id = ?
+        `;
+        await db.promise().query(updateSql, [new_response_deadline, new_resolution_deadline, ticketId]);
+
         const [authorities] = await db.promise().query('SELECT email FROM approving_authorities');
         const authorityEmails = authorities.map(a => a.email);
         if (authorityEmails.length > 0) {
