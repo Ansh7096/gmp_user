@@ -16,7 +16,7 @@ const app = express();
 // This tells your backend to accept requests ONLY from your deployed frontend.
 // This is crucial for security and for your login to work.
 const corsOptions = {
-    origin: 'https://gmp-user.user1.vercel.app', // Your exact frontend URL
+    origin: 'https://gmp-user.user-ui41.vercel.app', // CORRECTED URL
     optionsSuccessStatus: 200
 };
 
