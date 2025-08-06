@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// --- IMPORTANT: Set the base URL to your live backend ---
-// This ensures that all API calls from the frontend are directed to your
-// deployed backend at 'https://gmp-lnmiit.vercel.app'.
-axios.defaults.baseURL = 'https://gmp-lnmiit.vercel.app';
-// ----------------------------------------------------
+// In production, set the absolute base URL for the deployed backend.
+// In development, the base URL is an empty string. This makes API calls relative 
+// (e.g., '/api/auth/login'), which allows the Vite proxy to intercept them and
+// forward them to the target backend, avoiding CORS errors.
+axios.defaults.baseURL = import.meta.env.PROD ? 'https://gmp-lnmiit.vercel.app' : '';
 
 // This interceptor attaches the JWT token to every outgoing request
 // if it exists in localStorage.

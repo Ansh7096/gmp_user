@@ -1,7 +1,9 @@
 import { useState } from "react";
-import axios from "axios";
+// Change the axios import to use your configured instance
+import axios from "../api/axiosConfig";
 
-const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
+// Remove the hardcoded API_BASE_URL constant
+// const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function TrackGrievance() {
     const [grievanceId, setGrievanceId] = useState("");
@@ -19,8 +21,9 @@ export default function TrackGrievance() {
         setIsLoading(true);
         try {
             const encodedId = encodeURIComponent(grievanceId);
+            // Update the API call to be a relative path
             const res = await axios.get(
-                `${API_BASE_URL}/grievances/track/${encodedId}`
+                `/api/grievances/track/${encodedId}`
             );
             setData(res.data);
         } catch (err) {
