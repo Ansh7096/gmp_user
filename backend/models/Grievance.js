@@ -1,8 +1,6 @@
 // backend/models/Grievance.js
 import { db } from '../config/db.js';
 
-// ... (existing functions: getAllDepartments, getAllLocations, etc.)
-
 // NEW: Fetch all grievances for a specific user by email
 export const getGrievancesByEmail = (email, callback) => {
   const sql = `
@@ -132,7 +130,7 @@ export const getGrievancesByDepartment = (departmentId, callback) => {
       u.roll_number,
       g.escalation_level,
       w.name AS worker_name,
-      w.phone_number AS worker_phone_number 
+      w.phone_number AS worker_phone_number
     FROM grievances g
     JOIN categories c ON g.category_id = c.id
     LEFT JOIN users u ON g.email = u.email
@@ -143,7 +141,7 @@ ORDER BY g.created_at DESC
   db.query(sql, [departmentId], callback);
 };
 // Update status (and optionally assigned worker) of a ticket
-export const updateGrievanceStatus = (ticketId, status, workerId, callback) => {
+export const updateGrievanceStatus = (ticketId, status, workerId) => {
   const sql = workerId
     ? `UPDATE grievances SET status = ?, assigned_worker_id = ?, updated_at = CONVERT_TZ(NOW(), 'UTC', '+05:30') WHERE ticket_id = ?`
     : `UPDATE grievances SET status = ?, updated_at = CONVERT_TZ(NOW(), 'UTC', '+05:30') WHERE ticket_id = ?`;
@@ -151,7 +149,7 @@ export const updateGrievanceStatus = (ticketId, status, workerId, callback) => {
     ? [status, workerId, ticketId]
     : [status, ticketId];
 
-  db.query(sql, params, callback);
+  return db.promise().query(sql, params);
 };
 
 // Get detailed info for a single grievance
