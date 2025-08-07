@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "../api/axiosConfig";
+import { Info } from 'lucide-react'; // Import the Info icon
 
 export default function TrackGrievance() {
     const [grievanceId, setGrievanceId] = useState("");
@@ -49,7 +50,6 @@ export default function TrackGrievance() {
         });
     };
 
-    // Defines the visual steps for the progress bar.
     const steps = ["Submitted", "In Progress", "Escalated", "Resolved"];
 
     let currentStepIndex = -1;
@@ -90,7 +90,20 @@ export default function TrackGrievance() {
                 {data && (
                     <div className="mt-10 text-left p-6 bg-white/50 rounded-lg">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                            Status: <span className={data.status === 'Escalated' ? 'text-red-600' : 'text-blue-600'}>{data.status}</span>
+                            <div className="flex items-center justify-center gap-2">
+                                <span>Status:</span>
+                                <span className={data.status === 'Escalated' ? 'text-red-600' : 'text-blue-600'}>
+                                    {data.status}
+                                </span>
+                                {data.status === 'Escalated' && (
+                                    <div className="relative group">
+                                        <Info size={20} className="text-gray-500 cursor-pointer" />
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 text-sm text-white bg-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                            Your grievance has exceeded the standard resolution time. Respective authorities will now take action.
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </h3>
 
                         <div className="flex justify-between items-center mb-2 px-2">
