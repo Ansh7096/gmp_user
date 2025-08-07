@@ -13,10 +13,23 @@ dotenv.config();
 const app = express();
 
 // --- IMPORTANT: CORS Configuration for Separate Deployments ---
-// This tells your backend to accept requests ONLY from your deployed frontend.
-// This is crucial for security and for your login to work.
+// This list contains all the URLs that are allowed to make requests to your backend.
+const allowedOrigins = [
+    'https://gmp-user-ui41.vercel.app', // Your deployed frontend
+    'http://localhost:5174'             // Your local development environment
+];
+
 const corsOptions = {
-    origin: 'https://gmp-user-ui41.vercel.app', // CORRECT FINAL URL
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     optionsSuccessStatus: 200
 };
 
