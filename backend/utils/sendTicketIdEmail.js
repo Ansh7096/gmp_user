@@ -18,7 +18,7 @@ const createStyledEmail = (subject, contentHtml) => {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f4f7f6; }
             .email-container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
             .email-header { background-color: #f8f8f8; padding: 20px; text-align: center; border-bottom: 1px solid #e0e0e0;}
-            .email-header img { max-width: 180px; }
+            .email-header img { max-width: 220px; }
             .email-body { padding: 30px; font-size: 16px; line-height: 1.6; color: #333333; }
             .email-body p { margin: 0 0 15px 0; }
             .email-body h2 { color: #004a9c; margin-top: 0; }
@@ -33,7 +33,7 @@ const createStyledEmail = (subject, contentHtml) => {
     <body>
         <div class="email-container">
             <div class="email-header">
-                <img src="https://www.lnmiit.ac.in/sites/default/files/logo-new.png" alt="LNMIIT Logo">
+                <img src="https://gmp-user-ui41.vercel.app/gmp-logo-preview.png" alt="LNMIIT Grievance Portal Logo">
             </div>
             <div class="email-body">
                 ${contentHtml}
@@ -50,12 +50,6 @@ const createStyledEmail = (subject, contentHtml) => {
 
 /**
  * Send the user their grievance ticket ID and resolution timeline.
- *
- * @param {string} email       Recipient’s email address
- * @param {string} name        Complainant's name
- * @param {string} ticketId    Generated ticket ID (e.g. lnm/2025/07/0001)
- * @param {string} urgency     Urgency level (“Normal”, “High”, “Emergency”)
- * @param {string} resolveIn   Resolution timeline (e.g. “5 working days”)
  */
 export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveIn) => {
     if (!email) {
@@ -75,14 +69,13 @@ export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveI
     const content = `
         <h2>Grievance Submitted Successfully</h2>
         <p>Hi ${name},</p>
-        <p>Thank you for reaching out. Your grievance has been successfully logged in our system. We are committed to addressing your concerns promptly.</p>
+        <p>Thank you for reaching out. Your grievance has been successfully logged in our system.</p>
         <h3>Your Grievance Details:</h3>
         <ul>
             <li><strong>Ticket ID:</strong> ${ticketId}</li>
             <li><strong>Urgency Level:</strong> ${urgency}</li>
             <li><strong>Expected Resolution Timeline:</strong> Within ${resolveIn}</li>
         </ul>
-        <p>You can use your Ticket ID to track the status of your grievance at any time on the portal.</p>
         <div class="button-container">
             <a href="${process.env.FRONTEND_URL || '#'}/track-grievance" class="button">Track Your Grievance</a>
         </div>
@@ -102,6 +95,6 @@ export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveI
         console.log("Ticket ID email sent:", info.response);
     } catch (err) {
         console.error("Error sending ticket ID email:", err);
-        throw err;    // re‑throw so the controller’s .catch can pick it up
+        throw err;
     }
 };
