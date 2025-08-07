@@ -58,7 +58,7 @@ export default function TrackGrievance() {
         });
     };
 
-    const steps = ["Submitted", "In Progress", "Resolved"];
+    const steps = ["Submitted", "In Progress", "Escalated", "Resolved"];
     const currentStepIndex = data ? steps.indexOf(data.status) : -1;
 
     return (

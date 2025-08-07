@@ -95,7 +95,7 @@ export const checkAndEscalateGrievances = async () => {
                     const businessDaysSinceUpdate = calculateBusinessDays(lastUpdate, now);
 
                     if (businessDaysSinceUpdate >= 2) {
-                        await db.promise().query('UPDATE grievances SET escalation_level = 2, updated_at = NOW() WHERE id = ?', [grievance.id]);
+                        await db.promise().query('UPDATE grievances SET escalation_level = 2, status = \'Escalated\', updated_at = NOW() WHERE id = ?', [grievance.id]);
                         console.log(`Grievance ${grievance.ticket_id} escalated to Level 2 after ${businessDaysSinceUpdate} business days.`);
                         for (const adminEmail of adminEmails) {
                             await sendEscalationNotification(grievance, adminEmail, 2);
