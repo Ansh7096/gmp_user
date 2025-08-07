@@ -1,6 +1,6 @@
 # Grievance Management Portal
 
-🔗 **Live Demo:** [LNMIIT GRIEVANCE PORTAL](https://grievance-management-system-eight.vercel.app/) 
+🔗 **Live Demo:** [LNMIIT GRIEVANCE PORTAL](https://gmp-user-ui41.vercel.app/) 
 
 A centralized platform built for students and faculty of LNMIIT to submit, track, and resolve grievances efficiently.
 
@@ -11,7 +11,7 @@ A centralized platform built for students and faculty of LNMIIT to submit, track
 - User-friendly, responsive frontend
 - Modern design using React and Tailwind CSS
 
-## 🚧 Backend Development (In Progress)
+## 🚧 Backend Development
 
 We are currently working on building the backend using Node.js and MySQL. The backend will include:
 
