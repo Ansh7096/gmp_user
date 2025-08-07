@@ -1,10 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
-// This file now acts as a proxy to the main mail utility for consistency.
-// All email templates are managed in 'mail.js'.
 export { sendTicketIdEmail } from './mail.js';
-// … your existing sendOtpEmail and sendRegistrationEmail …
 
 /**
  * Send the user their grievance ticket ID and resolution timeline.
