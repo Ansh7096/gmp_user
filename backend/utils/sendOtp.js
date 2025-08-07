@@ -55,7 +55,7 @@ export const sendOtpEmail = async (email, otp) => {
     const content = `
         <h2>Verification Required</h2>
         <p>Dear User,</p>
-        <p>To proceed with your request, please use the following One-Time Password (OTP). This code is valid for 10 minutes.</p>
+        <p>To proceed with your request, please use the following One-Time Password (OTP). This code is valid for 60 seconds.</p>
         <div class="otp-code">${otp}</div>
         <p>If you did not request this code, you can safely ignore this email. Do not share this OTP with anyone.</p>
         <p>Thank you,<br>The LNMIIT Team</p>
