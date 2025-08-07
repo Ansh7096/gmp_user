@@ -1,9 +1,5 @@
 import { useState } from "react";
-// Change the axios import to use your configured instance
 import axios from "../api/axiosConfig";
-
-// Remove the hardcoded API_BASE_URL constant
-// const API_BASE_URL = "https://gmp-lnmiit.vercel.app/api";
 
 export default function TrackGrievance() {
     const [grievanceId, setGrievanceId] = useState("");
@@ -21,7 +17,6 @@ export default function TrackGrievance() {
         setIsLoading(true);
         try {
             const encodedId = encodeURIComponent(grievanceId);
-            // Update the API call to be a relative path
             const res = await axios.get(
                 `/api/grievances/track/${encodedId}`
             );
@@ -37,10 +32,6 @@ export default function TrackGrievance() {
         }
     };
 
-    /**
-     * THE FIX: This function now simply formats the date string it receives from the API.
-     * No timezone logic is needed here because the backend provides the correct IST time.
-     */
     const formatIST = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -58,8 +49,13 @@ export default function TrackGrievance() {
         });
     };
 
+    // Defines the visual steps for the progress bar.
     const steps = ["Submitted", "In Progress", "Escalated", "Resolved"];
-    const currentStepIndex = data ? steps.indexOf(data.status) : -1;
+
+    let currentStepIndex = -1;
+    if (data) {
+        currentStepIndex = steps.indexOf(data.status);
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-red-300 to-blue-300 flex items-center justify-center px-4">
@@ -76,7 +72,7 @@ export default function TrackGrievance() {
                         onChange={(e) => setGrievanceId(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleTrack()}
                         className="px-4 py-3 border border-gray-300 rounded-lg shadow-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="e.g., lnm/2025/07/0001"
+                        placeholder="e.g., lnm/2025/08/0005"
                     />
                     <button
                         onClick={handleTrack}
@@ -94,7 +90,7 @@ export default function TrackGrievance() {
                 {data && (
                     <div className="mt-10 text-left p-6 bg-white/50 rounded-lg">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                            Status: <span className="text-blue-600">{data.status}</span>
+                            Status: <span className={data.status === 'Escalated' ? 'text-red-600' : 'text-blue-600'}>{data.status}</span>
                         </h3>
 
                         <div className="flex justify-between items-center mb-2 px-2">
@@ -105,7 +101,7 @@ export default function TrackGrievance() {
                         <div className="relative w-full bg-gray-200 rounded-full h-2.5">
                             <div
                                 className="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
-                                style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+                                style={{ width: currentStepIndex >= 0 ? `${(currentStepIndex / (steps.length - 1)) * 100}%` : '0%' }}
                             ></div>
                         </div>
 
