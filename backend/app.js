@@ -19,18 +19,22 @@ const allowedOrigins = [
     'http://localhost:5174'             // Your local development environment
 ];
 
+// --- UPDATED: More Robust CORS Options ---
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) === -1) {
+        // The '|| !origin' check allows requests with no origin (like mobile apps or curl)
+        // and same-origin requests.
+        if (allowedOrigins.includes(origin) || !origin) {
+            callback(null, true);
+        } else {
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+            callback(new Error(msg), false);
         }
-        return callback(null, true);
     },
-    optionsSuccessStatus: 200
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // Explicitly allow headers
+    credentials: true, // Allow cookies/authorization headers
+    optionsSuccessStatus: 200 // For legacy browser support
 };
 
 app.use(cors(corsOptions));
