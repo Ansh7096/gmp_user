@@ -1,7 +1,9 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
-
+// This file now acts as a proxy to the main mail utility for consistency.
+// All email templates are managed in 'mail.js'.
+export { sendOtpEmail } from './mail.js';
 export const sendOtpEmail = async (email, otp) => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
