@@ -127,67 +127,81 @@ export const sendGrievanceAssignedEmailToUser = async (userEmail, userName, tick
     await sendEmail(userEmail, subject, html);
 };
 
-export const sendGrievanceAssignedEmailToWorker = async (workerEmail, workerName, ticketId, grievance, officeBearer) => {
-    const subject = `New Grievance Assigned to You: ${ticketId}`;
-    const content = `
-        <h2>New Grievance Assignment</h2>
-        <p>Hi ${workerName},</p>
-        <p>A new grievance has been assigned to you. Please review the details in the attached PDF and take appropriate action.</p>
-        ${officeBearer ? `
-            <hr>
-            <h3>Assigned By (Office Bearer)</h3>
-            <ul>
-                <li><strong>Name:</strong> ${officeBearer.name}</li>
-                <li><strong>Email:</strong> ${officeBearer.email}</li>
-                <li><strong>Phone:</strong> ${officeBearer.mobile_number}</li>
-            </ul>
-        ` : ''}
-        <p>Regards,<br>LNMIIT Grievance System</p>
-    `;
-    const html = createStyledEmail(subject, content);
+export const sendGrievanceAssignedEmailToWorker = (workerEmail, workerName, ticketId, grievance, officeBearer) => {
+    return new Promise((resolve, reject) => {
+        const subject = `New Grievance Assigned to You: ${ticketId}`;
+        const content = `
+            <h2>New Grievance Assignment</h2>
+            <p>Hi ${workerName},</p>
+            <p>A new grievance has been assigned to you. Please review the details in the attached PDF and take appropriate action.</p>
+            ${officeBearer ? `
+                <hr>
+                <h3>Assigned By (Office Bearer)</h3>
+                <ul>
+                    <li><strong>Name:</strong> ${officeBearer.name}</li>
+                    <li><strong>Email:</strong> ${officeBearer.email}</li>
+                    <li><strong>Phone:</strong> ${officeBearer.mobile_number}</li>
+                </ul>
+            ` : ''}
+            <p>Regards,<br>LNMIIT Grievance System</p>
+        `;
+        const html = createStyledEmail(subject, content);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    const buffers = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', async () => {
-        const pdfData = Buffer.concat(buffers);
-        const attachments = [{
-            filename: `Grievance-Summary-${ticketId}.pdf`,
-            content: pdfData,
-            contentType: 'application/pdf'
-        }];
-        if (grievance.attachment) {
-            attachments.push({
-                filename: `user_attachment_${ticketId}.jpg`, // Assuming jpg, adjust if needed
-                path: grievance.attachment,
-            });
-        }
-        await sendEmail(workerEmail, subject, html, attachments);
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('error', (err) => {
+            console.error('PDF Generation Error:', err);
+            reject(new Error('Failed to generate PDF for email.'));
+        });
+        doc.on('end', async () => {
+            try {
+                const pdfData = Buffer.concat(buffers);
+                const attachments = [{
+                    filename: `Grievance-Summary-${ticketId}.pdf`,
+                    content: pdfData,
+                    contentType: 'application/pdf'
+                }];
+
+                if (grievance.attachment) {
+                    attachments.push({
+                        filename: `user_attachment_${ticketId}.jpg`,
+                        path: grievance.attachment,
+                    });
+                }
+
+                await sendEmail(workerEmail, subject, html, attachments);
+                resolve();
+            } catch (emailError) {
+                console.error('sendEmail inside doc.on(end) failed:', emailError);
+                reject(emailError);
+            }
+        });
+
+        doc.fontSize(20).text('Grievance Report', { align: 'center' });
+        doc.moveDown(2);
+        doc.fontSize(16).text(`Ticket ID: ${grievance.ticket_id}`);
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+        doc.fontSize(12);
+        doc.font('Helvetica-Bold').text('Title: ', { continued: true }).font('Helvetica').text(grievance.title);
+        doc.font('Helvetica-Bold').text('Urgency: ', { continued: true }).font('Helvetica').text(grievance.urgency);
+        doc.font('Helvetica-Bold').text('Location: ', { continued: true }).font('Helvetica').text(grievance.location);
+        doc.moveDown(2);
+        doc.fontSize(14).font('Helvetica-Bold').text('Complainant Details');
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+        doc.fontSize(12).font('Helvetica');
+        doc.font('Helvetica-Bold').text('Name: ', { continued: true }).font('Helvetica').text(grievance.complainant_name);
+        doc.font('Helvetica-Bold').text('Email: ', { continued: true }).font('Helvetica').text(grievance.email);
+        doc.font('Helvetica-Bold').text('Mobile: ', { continued: true }).font('Helvetica').text(grievance.mobile_number);
+        doc.moveDown(2);
+        doc.fontSize(14).font('Helvetica-Bold').text('Description');
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+        doc.fontSize(12).font('Helvetica').text(grievance.description, { align: 'justify' });
+        doc.end();
     });
-
-    doc.fontSize(20).text('Grievance Report', { align: 'center' });
-    doc.moveDown(2);
-    doc.fontSize(16).text(`Ticket ID: ${grievance.ticket_id}`);
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown();
-    doc.fontSize(12);
-    doc.font('Helvetica-Bold').text('Title: ', { continued: true }).font('Helvetica').text(grievance.title);
-    doc.font('Helvetica-Bold').text('Urgency: ', { continued: true }).font('Helvetica').text(grievance.urgency);
-    doc.font('Helvetica-Bold').text('Location: ', { continued: true }).font('Helvetica').text(grievance.location);
-    doc.moveDown(2);
-    doc.fontSize(14).font('Helvetica-Bold').text('Complainant Details');
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown();
-    doc.fontSize(12).font('Helvetica');
-    doc.font('Helvetica-Bold').text('Name: ', { continued: true }).font('Helvetica').text(grievance.complainant_name);
-    doc.font('Helvetica-Bold').text('Email: ', { continued: true }).font('Helvetica').text(grievance.email);
-    doc.font('Helvetica-Bold').text('Mobile: ', { continued: true }).font('Helvetica').text(grievance.mobile_number);
-    doc.moveDown(2);
-    doc.fontSize(14).font('Helvetica-Bold').text('Description');
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown();
-    doc.fontSize(12).font('Helvetica').text(grievance.description, { align: 'justify' });
-    doc.end();
 };
 
 export const sendEscalationNotification = async (grievance, recipientEmail, level) => {
