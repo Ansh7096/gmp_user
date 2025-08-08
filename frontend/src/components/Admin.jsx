@@ -143,7 +143,13 @@ export default function Admin() {
             if (startDate && grievanceDate < startDate) return false;
             if (endDate && grievanceDate > endDate) return false;
             if (filters.department && g.department_name !== filters.department) return false;
-            if (filters.status && g.status !== filters.status) return false;
+            if (filters.status) {
+                if (filters.status === 'Escalated') {
+                    if (g.escalation_level === 0) return false;
+                } else {
+                    if (g.status !== filters.status) return false;
+                }
+            }
             if (filters.escalation && g.escalation_level < parseInt(filters.escalation)) return false;
             if (filters.urgency && g.urgency !== filters.urgency) return false; // Added urgency filter logic
 
@@ -402,6 +408,7 @@ export default function Admin() {
                                         <option value="Submitted">Submitted</option>
                                         <option value="In Progress">In Progress</option>
                                         <option value="Resolved">Resolved</option>
+                                        <option value="Escalated">Escalated</option>
                                     </select>
                                     <select name="escalation" value={filters.escalation} onChange={handleFilterChange} className="p-2 border rounded">
                                         <option value="">Any Escalation</option>
@@ -439,7 +446,7 @@ export default function Admin() {
                                             <td className="p-3">{g.title}</td>
                                             <td className="p-3">{g.department_name}</td>
                                             <td className="p-3">
-                                                {/* --- STATUS DISPLAY LOGIC FIXED --- */}
+                                                {/* --- STATUS DISPLAY LOGIC UPDATED --- */}
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${g.escalation_level > 0 ? 'bg-red-200 text-red-800' :
                                                     g.status === 'Resolved' ? 'bg-green-200 text-green-800' :
                                                         g.status === 'In Progress' ? 'bg-blue-200 text-blue-800' :

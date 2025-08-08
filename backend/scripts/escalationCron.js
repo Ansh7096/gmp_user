@@ -62,7 +62,7 @@ export const checkAndEscalateGrievances = async () => {
 
             if (authorityEmails.length > 0) {
                 for (const grievance of grievancesToLevel1) {
-                    await db.promise().query('UPDATE grievances SET escalation_level = 1, status = \'Escalated\', updated_at = NOW() WHERE id = ?', [grievance.id]);
+                    await db.promise().query('UPDATE grievances SET escalation_level = 1, updated_at = NOW() WHERE id = ?', [grievance.id]);
                     console.log(`Grievance ${grievance.ticket_id} escalated to Level 1.`);
                     for (const authorityEmail of authorityEmails) {
                         await sendEscalationNotification(grievance, authorityEmail, 1);
@@ -95,7 +95,7 @@ export const checkAndEscalateGrievances = async () => {
                     const businessDaysSinceUpdate = calculateBusinessDays(lastUpdate, now);
 
                     if (businessDaysSinceUpdate >= 2) {
-                        await db.promise().query('UPDATE grievances SET escalation_level = 2, status = \'Escalated\', updated_at = NOW() WHERE id = ?', [grievance.id]);
+                        await db.promise().query('UPDATE grievances SET escalation_level = 2, updated_at = NOW() WHERE id = ?', [grievance.id]);
                         console.log(`Grievance ${grievance.ticket_id} escalated to Level 2 after ${businessDaysSinceUpdate} business days.`);
                         for (const adminEmail of adminEmails) {
                             await sendEscalationNotification(grievance, adminEmail, 2);

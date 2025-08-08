@@ -55,7 +55,11 @@ const GrievanceHistory = () => {
         }
 
         if (filters.status) {
-            filteredItems = filteredItems.filter(item => item.status === filters.status);
+            if (filters.status === 'Escalated') {
+                filteredItems = filteredItems.filter(item => item.escalation_level > 0);
+            } else {
+                filteredItems = filteredItems.filter(item => item.status === filters.status && item.escalation_level === 0);
+            }
         }
 
         if (filters.department) {
@@ -107,35 +111,29 @@ const GrievanceHistory = () => {
         setFilters({ ...filters, [e.target.name]: e.target.value });
     };
 
-    /**
-     * This function renders the status badge based on the grievance status from the database.
-     * It handles known statuses and defaults unknown ones to "Submitted" to prevent visual glitches.
-     * @param {string} status - The status of the grievance from the database.
-     * @returns {JSX.Element} - A styled span element for the status.
-     */
-    const getStatusBadge = (status) => {
-        let displayText = status;
-        let styleClass = '';
+    const getStatusBadge = (grievance) => {
+        let displayText;
+        let styleClass;
 
-        switch (status) {
-            case 'Resolved':
-                styleClass = 'bg-green-200 text-green-800';
-                break;
-            case 'In Progress':
-                styleClass = 'bg-blue-200 text-blue-800';
-                break;
-            case 'Escalated':
-                styleClass = 'bg-red-200 text-red-800';
-                break;
-            case 'Submitted':
-                styleClass = 'bg-yellow-200 text-yellow-800';
-                break;
-            default:
-                // If the status from the DB is not a recognized value (e.g., '.', null),
-                // default to showing 'Submitted' to fix the UI bug.
-                displayText = 'Submitted';
-                styleClass = 'bg-yellow-200 text-yellow-800';
-                break;
+        if (grievance.escalation_level > 0) {
+            displayText = 'Escalated';
+            styleClass = 'bg-red-200 text-red-800';
+        } else {
+            switch (grievance.status) {
+                case 'Resolved':
+                    displayText = 'Resolved';
+                    styleClass = 'bg-green-200 text-green-800';
+                    break;
+                case 'In Progress':
+                    displayText = 'In Progress';
+                    styleClass = 'bg-blue-200 text-blue-800';
+                    break;
+                case 'Submitted':
+                default:
+                    displayText = 'Submitted';
+                    styleClass = 'bg-yellow-200 text-yellow-800';
+                    break;
+            }
         }
 
         return (
@@ -217,7 +215,7 @@ const GrievanceHistory = () => {
                                         <td className="py-3 px-4">{grievance.title}</td>
                                         <td className="py-3 px-4">{grievance.department_name}</td>
                                         <td className="py-3 px-4">
-                                            {getStatusBadge(grievance.status)}
+                                            {getStatusBadge(grievance)}
                                         </td>
                                         <td className="py-3 px-4">{formatTimestamp(grievance.created_at)}</td>
                                         <td className="py-3 px-4">{formatTimestamp(grievance.updated_at)}</td>

@@ -50,11 +50,15 @@ export default function TrackGrievance() {
         });
     };
 
-    const steps = ["Submitted", "In Progress", "Escalated", "Resolved"];
+    const steps = ["Submitted", "In Progress", "Resolved"];
 
     let currentStepIndex = -1;
     if (data) {
-        currentStepIndex = steps.indexOf(data.status);
+        if (data.escalation_level > 0) {
+            currentStepIndex = 1; // If escalated, it is "In Progress"
+        } else {
+            currentStepIndex = steps.indexOf(data.status);
+        }
     }
 
     return (
@@ -92,10 +96,10 @@ export default function TrackGrievance() {
                         <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
                             <div className="flex items-center justify-center gap-2">
                                 <span>Status:</span>
-                                <span className={data.status === 'Escalated' ? 'text-red-600' : 'text-blue-600'}>
-                                    {data.status}
+                                <span className={data.escalation_level > 0 ? 'text-red-600' : 'text-blue-600'}>
+                                    {data.escalation_level > 0 ? 'Escalated' : data.status}
                                 </span>
-                                {data.status === 'Escalated' && (
+                                {data.escalation_level > 0 && (
                                     <div className="relative group">
                                         <Info size={20} className="text-gray-500 cursor-pointer" />
                                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 text-sm text-white bg-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
