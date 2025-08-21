@@ -17,7 +17,7 @@ import {
     sendRevertToOfficeBearerEmail,
     sendGrievanceTransferNotification
 } from '../utils/mail.js';
-import { sendTicketIdEmail } from '../utils/sendTicketIdEmail.js'; // Import the sendTicketIdEmail function
+import { sendTicketIdEmail } from '../utils/sendTicketIdEmail.js';
 import imagekit from '../config/imagekit.js';
 import { db } from '../config/db.js';
 import bcrypt from 'bcrypt';
@@ -28,7 +28,6 @@ const calculateDeadline = (hours) => {
     let remainingHours = hours;
     while (remainingHours > 0) {
         deadline.setHours(deadline.getHours() + 1);
-        // Do not count Sundays
         if (deadline.getDay() !== 0) {
             remainingHours--;
         }
@@ -87,14 +86,6 @@ export const submitGrievance = async (req, res, next) => {
         const department_id = parseInt(department, 10);
         const category_id = parseInt(category, 10);
 
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-
-        const [rows] = await db.promise().query(`SELECT COUNT(*) AS count FROM grievances WHERE MONTH(created_at) = ? AND YEAR(created_at) = ?`, [month, year]);
-        const serialNo = String(rows[0].count + 1).padStart(4, '0');
-        const ticket_id = `lnm/${year}/${month}/${serialNo}`;
-
         let response_deadline, resolution_deadline;
         let resolveIn;
         switch (urgency) {
@@ -115,22 +106,57 @@ export const submitGrievance = async (req, res, next) => {
                 break;
         }
 
-        createGrievance({
-            ticket_id, title, description, location, department_id, category_id, urgency,
-            attachmentPath: imageUrl, mobile_number: mobileNumber, complainant_name: complainantName,
-            email, response_deadline, resolution_deadline
-        }, async (err) => {
-            if (err) return next(new ErrorResponse('DB error inserting grievance', 500));
+        let grievanceData;
+        let maxRetries = 5;
+        let attempt = 0;
 
+        while (attempt < maxRetries) {
             try {
-                await sendTicketIdEmail(email, complainantName, ticket_id, urgency, resolveIn);
-                res.status(201).json({ message: 'Grievance submitted successfully', ticket_id });
-            } catch (emailError) {
-                console.error("Failed to send ticket ID email:", emailError);
-                // Still return success to the user, but log the email error
-                res.status(201).json({ message: 'Grievance submitted, but notification email failed.', ticket_id });
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+
+                const [rows] = await db.promise().query(`SELECT COUNT(*) AS count FROM grievances WHERE MONTH(created_at) = ? AND YEAR(created_at) = ?`, [month, year]);
+                const serialNo = String(rows[0].count + 1).padStart(4, '0');
+                const ticket_id = `lnm/${year}/${month}/${serialNo}`;
+
+                grievanceData = {
+                    ticket_id, title, description, location, department_id, category_id, urgency,
+                    attachmentPath: imageUrl, mobile_number: mobileNumber, complainant_name: complainantName,
+                    email, response_deadline, resolution_deadline
+                };
+
+                const dbPromise = () => new Promise((resolve, reject) => {
+                    createGrievance(grievanceData, (err) => {
+                        if (err) return reject(err);
+                        resolve();
+                    });
+                });
+
+                await dbPromise();
+
+                break;
+
+            } catch (err) {
+                if (err.errno === 1062) {
+                    console.warn(`Attempt ${attempt + 1}: Duplicate ticket ID detected. Retrying...`);
+                    attempt++;
+                    if (attempt === maxRetries) {
+                        throw new ErrorResponse('Failed to generate a unique ticket ID after multiple retries.', 500);
+                    }
+                } else {
+                    throw err;
+                }
             }
-        });
+        }
+
+        try {
+            await sendTicketIdEmail(email, complainantName, grievanceData.ticket_id, urgency, resolveIn);
+            res.status(201).json({ message: 'Grievance submitted successfully', ticket_id: grievanceData.ticket_id });
+        } catch (emailError) {
+            console.error("Failed to send ticket ID email:", emailError);
+            res.status(201).json({ message: 'Grievance submitted, but notification email failed.', ticket_id: grievanceData.ticket_id });
+        }
     } catch (err) {
         console.error("--- IMAGEKIT UPLOAD FAILED OR OTHER ERROR ---", err);
         next(err);
@@ -177,17 +203,14 @@ export const assignGrievance = async (req, res, next) => {
         const { ticketId } = req.params;
         const { workerId, officeBearerEmail } = req.body;
 
-        // First, get the worker's details to ensure they exist
         const [workerDetails] = await db.promise().query('SELECT * FROM workers WHERE id = ?', [workerId]);
         if (!workerDetails.length) {
             return next(new ErrorResponse('Worker not found.', 404));
         }
         const worker = workerDetails[0];
 
-        // Now, update the grievance and wait for it to complete
         await updateGrievanceStatus(ticketId, 'In Progress', workerId);
 
-        // Fetch the rest of the details needed for the emails
         const [grievanceDetails] = await db.promise().query('SELECT g.*, c.name as category_name, u.roll_number FROM grievances g LEFT JOIN categories c ON g.category_id = c.id LEFT JOIN users u ON g.email = u.email WHERE g.ticket_id = ?', [ticketId]);
         const [bearerDetails] = await db.promise().query('SELECT name, email, mobile_number FROM office_bearers WHERE email = ?', [officeBearerEmail]);
 
@@ -195,7 +218,6 @@ export const assignGrievance = async (req, res, next) => {
             const grievance = grievanceDetails[0];
             const officeBearer = bearerDetails.length ? bearerDetails[0] : null;
 
-            // Send emails with the correct, fetched worker details
             await sendGrievanceAssignedEmailToUser(grievance.email, grievance.complainant_name, ticketId, worker);
             if (officeBearer) {
                 await sendGrievanceAssignedEmailToWorker(worker.email, worker.name, ticketId, grievance, officeBearer);
@@ -205,7 +227,6 @@ export const assignGrievance = async (req, res, next) => {
         res.status(200).json({ message: 'Grievance assigned successfully' });
     } catch (err) {
         console.error("Assign grievance error:", err);
-        // Handle potential email or other errors
         if (err.message.includes("email")) {
             return next(new ErrorResponse('Grievance assigned, but failed to send notification emails.', 500));
         }
@@ -216,7 +237,6 @@ export const assignGrievance = async (req, res, next) => {
 export const resolveGrievance = async (req, res, next) => {
     try {
         const { ticketId } = req.params;
-        // The updateGrievanceStatus function now returns a promise
         await updateGrievanceStatus(ticketId, 'Resolved', null);
 
         try {
@@ -234,6 +254,7 @@ export const resolveGrievance = async (req, res, next) => {
         next(err);
     }
 };
+
 export const getEscalatedGrievances = (req, res, next) => {
     const sql = 'SELECT g.ticket_id, g.title, g.urgency, g.status, g.created_at, g.updated_at, g.escalation_level, d.name AS department_name FROM grievances g JOIN departments d ON g.department_id = d.id WHERE g.escalation_level = 1 ORDER BY g.created_at DESC';
     db.query(sql, (err, results) => {
@@ -242,8 +263,6 @@ export const getEscalatedGrievances = (req, res, next) => {
     });
 };
 
-// backend/controllers/grievanceController.js
-
 export const revertGrievance = async (req, res, next) => {
     const { ticketId } = req.params;
     const { new_resolution_days, comment, authorityEmail } = req.body;
@@ -251,11 +270,9 @@ export const revertGrievance = async (req, res, next) => {
         return next(new ErrorResponse('Comment and a valid number of new resolution days are required.', 400));
     }
     try {
-        // Calculate resolution deadline in working hours
         const new_resolution_hours = new_resolution_days * 24;
         const new_resolution_deadline = calculateDeadline(new_resolution_hours);
 
-        // **NEW LOGIC**: Calculate response deadline as half of the resolution deadline
         const new_response_hours = new_resolution_hours / 2;
         const new_response_deadline = calculateDeadline(new_response_hours);
 
@@ -288,6 +305,7 @@ export const revertGrievance = async (req, res, next) => {
         next(err);
     }
 };
+
 export const transferGrievance = async (req, res, next) => {
     const { ticketId, newDepartmentId } = req.body;
     if (!ticketId || !newDepartmentId) {
@@ -378,8 +396,6 @@ export const getLevel2Grievances = (req, res, next) => {
     });
 };
 
-// backend/controllers/grievanceController.js
-
 export const revertToLevel1 = async (req, res, next) => {
     const { ticketId } = req.params;
     const { new_resolution_days, comment, adminEmail } = req.body;
@@ -387,11 +403,9 @@ export const revertToLevel1 = async (req, res, next) => {
         return next(new ErrorResponse('Comment and a valid number of new resolution days are required.', 400));
     }
     try {
-        // Calculate resolution deadline in working hours
         const new_resolution_hours = new_resolution_days * 24;
         const new_resolution_deadline = calculateDeadline(new_resolution_hours);
 
-        // **NEW LOGIC**: Calculate response deadline as half of the resolution deadline
         const new_response_hours = new_resolution_hours / 2;
         const new_response_deadline = calculateDeadline(new_response_hours);
 
