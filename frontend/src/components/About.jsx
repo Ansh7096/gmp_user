@@ -19,7 +19,7 @@ export default function About() {
                     Reach out to the concerned authorities for grievance resolution.
                 </p>
 
-                {/* Mentors Section (Top) */}
+                { }
                 <h2 className="text-2xl font-semibold text-gray-800 mt-10 text-center">Mentors</h2>
                 <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {mentors.map((mentor) => (
@@ -32,7 +32,7 @@ export default function About() {
                     ))}
                 </div>
 
-                {/* Developers Section */}
+                { }
                 <h2 className="text-2xl font-semibold text-gray-800 mt-10 text-center">Developers</h2>
                 <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {developers.map((dev) => (

@@ -1,4 +1,3 @@
-// backend/scripts/escalationCron.js
 import { fileURLToPath } from 'url';
 import { db } from '../config/db.js';
 import { sendEscalationNotification } from '../utils/mail.js';
@@ -9,7 +8,7 @@ import { sendEscalationNotification } from '../utils/mail.js';
  * @returns {boolean} - True if the date is a Sunday, false otherwise.
  */
 const isSunday = (date) => {
-    return date.getDay() === 0; // Sunday is 0 in JavaScript's getDay()
+    return date.getDay() === 0;
 };
 
 /**
@@ -27,21 +26,16 @@ const calculateBusinessDays = (startDate, endDate) => {
         }
         curDate.setDate(curDate.getDate() + 1);
     }
-    return count - 1; // Subtract 1 to not count the start day itself
+    return count - 1;
 };
 
-/**
- * Checks for overdue grievances and escalates them to the next level.
- * This function is designed to be called periodically by the main app server.
- */
+
 export const checkAndEscalateGrievances = async () => {
     console.log(`[${new Date().toISOString()}] Running escalation check...`);
     try {
         const now = new Date();
 
         // --- LEVEL 1 ESCALATION (Office Bearer -> Approving Authority) ---
-        // FIX: Use CONVERT_TZ to ensure the current time is in IST for comparison,
-        // making the query robust against server timezone configurations.
         const findLevel1GrievancesSQL = `
             SELECT
                 g.id, g.ticket_id, g.title, g.status, g.response_deadline, g.resolution_deadline

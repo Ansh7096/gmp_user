@@ -31,7 +31,7 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Apply protect middleware to all routes that require authentication
+
 router.use(protect);
 
 router.get('/history/:email', getUserGrievanceHistory);
@@ -50,7 +50,6 @@ router.put('/revert/:ticketId(.*)', revertGrievance);
 router.post('/add-office-bearer', addOfficeBearer);
 router.put('/transfer', transferGrievance);
 
-// --- ADMIN ROUTES ---
 router.get('/admin/all', getAllGrievancesForAdmin);
 router.get('/admin/stats', getAdminDashboardStats);
 router.get('/admin/escalated-level2', getLevel2Grievances);

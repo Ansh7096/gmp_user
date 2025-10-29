@@ -7,9 +7,9 @@ dotenv.config();
 (async () => {
     try {
         const name = 'Admin';
-        const email = '22dcs001@lnmiit.ac.in';
-        const plainPassword = '123456789';
-        const mobile_number = '7357222550';
+        const email = 'lead.apps@lnmiit.ac.in';
+        const plainPassword = 'bs123@';
+        const mobile_number = '8104066299';
         const role = 'Admin';
 
         const hashedPassword = await bcrypt.hash(plainPassword, 6);

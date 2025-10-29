@@ -7,8 +7,8 @@ dotenv.config();
 (async () => {
     try {
         const name = 'Approving Authority';
-        const email = 'authority@lnmiit.ac.in';
-        const plainPassword = '123456789';
+        const email = 'jts.programmer@lnmiit.ac.in';
+        const plainPassword = 'bs123@';
         const mobile_number = '7357222550';
         const role = 'Approving Authority';
 

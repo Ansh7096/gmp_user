@@ -11,9 +11,9 @@ dotenv.config();
     try {
         // Hardcoded credentials
         const name = 'Office Bearer';
-        const email = 'officebearer@lnmiit.ac.in';
-        const plainPassword = '123456789';
-        const mobile_number = '7357222550';
+        const email = 'webmaster@lnmiit.ac.in';
+        const plainPassword = 'it123@';
+        const mobile_number = '8104066299';
         const role = 'Office Bearer';
         const department = 'IT';
 

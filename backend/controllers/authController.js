@@ -48,7 +48,6 @@ export const registerUser = async (req, res, next) => {
                 res.status(201).json({ message: 'User registered successfully.' });
             } catch (emailError) {
                 console.error("Email sending failed:", emailError);
-                // Even if email fails, the user is created. We inform about the email failure.
                 return next(new ErrorResponse('User registered, but failed to send welcome email.', 500));
             }
         });
@@ -94,7 +93,7 @@ export const verifyOtp = (req, res, next) => {
         return next(new ErrorResponse('Incorrect OTP', 400));
     }
 
-    const isExpired = (Date.now() - storedData.createdAt) > 60000; // 60 seconds
+    const isExpired = (Date.now() - storedData.createdAt) > 60000;
     if (isExpired) {
         otpStore.delete(email);
         return next(new ErrorResponse('OTP has expired. Please request a new one.', 400));
@@ -226,7 +225,6 @@ export const resetPassword = async (req, res, next) => {
 };
 
 export const getUserProfile = (req, res, next) => {
-    // The 'protect' middleware adds the user payload to req.user
     const email = req.user.email;
 
     if (!email) {

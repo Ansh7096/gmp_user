@@ -1,4 +1,3 @@
-// /backend/routes/authRoutes.js
 import express from 'express';
 import {
     registerUser,
@@ -17,6 +16,5 @@ router.post('/verify-otp', verifyOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
-// ← New profile endpoint
 router.get('/profile', protect, getUserProfile);
 export default router;

@@ -4,7 +4,7 @@ import logo from "../assets/Logo_LNMIIT2.png";
 import background from "../assets/background.jpg";
 import OtpLoader from "./OtpLoader";
 import toast from 'react-hot-toast';
-import axios from '../api/axiosConfig'; // Use the configured axios instance
+import axios from '../api/axiosConfig';
 import { Eye, EyeOff } from 'lucide-react';
 
 const checkPasswordStrength = (password) => {

@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, MessageSquare, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
-import axios from '../api/axiosConfig'; // Use the configured axios instance
+import axios from '../api/axiosConfig';
 
 const downloadCSV = (data, filename = 'report.csv') => {
     if (!data || data.length === 0) {
@@ -54,12 +54,12 @@ export default function Admin() {
     const [newDepartment, setNewDepartment] = useState('');
     const [newCategory, setNewCategory] = useState({ name: '', department_id: '', urgency: 'Normal' });
 
-    // --- UPDATED FILTER STATE ---
+
     const [filters, setFilters] = useState({
         department: '',
         status: '',
         escalation: '',
-        urgency: '', // Added urgency to the filter state
+        urgency: '',
         startDate: '',
         endDate: ''
     });
@@ -132,7 +132,7 @@ export default function Admin() {
         }).finally(() => setIsLoading(false));
     }, [navigate]);
 
-    // --- UPDATED FILTER LOGIC ---
+
     const filteredAndSortedGrievances = useMemo(() => {
         let items = [...grievances];
         items = items.filter(g => {
@@ -415,7 +415,7 @@ export default function Admin() {
                                         <option value="1">Level 1+</option>
                                         <option value="2">Level 2+</option>
                                     </select>
-                                    {/* --- NEW URGENCY FILTER ADDED --- */}
+                                    { }
                                     <select name="urgency" value={filters.urgency} onChange={handleFilterChange} className="p-2 border rounded">
                                         <option value="">All Urgencies</option>
                                         <option value="Normal">Normal</option>
@@ -446,7 +446,7 @@ export default function Admin() {
                                             <td className="p-3">{g.title}</td>
                                             <td className="p-3">{g.department_name}</td>
                                             <td className="p-3">
-                                                {/* --- STATUS DISPLAY LOGIC UPDATED --- */}
+                                                { }
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${g.escalation_level > 0 ? 'bg-red-200 text-red-800' :
                                                     g.status === 'Resolved' ? 'bg-green-200 text-green-800' :
                                                         g.status === 'In Progress' ? 'bg-blue-200 text-blue-800' :

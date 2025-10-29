@@ -2,9 +2,8 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Helper function to create a standardized, styled email template
 const createStyledEmail = (subject, contentHtml) => {
-    // The FRONTEND_URL should be set in your .env file (e.g., https://gmp-user-ui41.vercel.app)
+
     const frontendUrl = process.env.FRONTEND_URL || '#';
 
     return `
@@ -48,9 +47,7 @@ const createStyledEmail = (subject, contentHtml) => {
     `;
 };
 
-/**
- * Send the user their grievance ticket ID and resolution timeline.
- */
+
 export const sendTicketIdEmail = async (email, name, ticketId, urgency, resolveIn) => {
     if (!email) {
         console.error("sendTicketIdEmail: missing recipient email, aborting send");
