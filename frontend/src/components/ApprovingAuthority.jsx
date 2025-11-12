@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, MessageSquare, ArrowRightCircle, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, MessageSquare, ArrowRightCircle, Filter, Trash2 } from 'lucide-react'; // Added Trash2
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
@@ -9,9 +9,11 @@ import axios from '../api/axiosConfig'; // Use the configured axios instance
 export default function ApprovingAuthority() {
     const [allGrievances, setAllGrievances] = useState([]);
     const [departments, setDepartments] = useState([]);
+    const [officeBearers, setOfficeBearers] = useState([]); // --- NEW ---
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [isAddBearerFormVisible, setAddBearerFormVisible] = useState(false);
+    const [isDeleteBearerFormVisible, setDeleteBearerFormVisible] = useState(false); // --- NEW ---
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
     const [departmentFilter, setDepartmentFilter] = useState('');
     const navigate = useNavigate();
@@ -27,14 +29,17 @@ export default function ApprovingAuthority() {
     const [newOfficeBearer, setNewOfficeBearer] = useState({
         name: '', email: '', password: '', mobile_number: '', role: 'Office Bearer', department: ''
     });
+    const [bearerToDelete, setBearerToDelete] = useState(''); // --- NEW ---
 
     useEffect(() => {
         Promise.all([
             axios.get('/api/grievances/escalated'),
-            axios.get('/api/grievances/departments')
-        ]).then(([grievanceRes, departmentRes]) => {
+            axios.get('/api/grievances/departments'),
+            axios.get('/api/grievances/office-bearers') // --- NEW ---
+        ]).then(([grievanceRes, departmentRes, bearerRes]) => {
             setAllGrievances(grievanceRes.data);
             setDepartments(departmentRes.data);
+            setOfficeBearers(bearerRes.data); // --- NEW ---
             setIsLoading(false);
         }).catch(err => {
             console.error("Fetch error:", err);
@@ -147,13 +152,36 @@ export default function ApprovingAuthority() {
         e.preventDefault();
         const toastId = toast.loading("Adding Office Bearer...");
         try {
-            await axios.post('/api/grievances/add-office-bearer', newOfficeBearer);
+            const res = await axios.post('/api/grievances/add-office-bearer', newOfficeBearer);
 
+            // Add to local state
+            setOfficeBearers([...officeBearers, { ...newOfficeBearer, id: res.data.id }]);
             toast.success("Office bearer added successfully!", { id: toastId });
             setNewOfficeBearer({ name: '', email: '', password: '', mobile_number: '', role: 'Office Bearer', department: '' });
             setAddBearerFormVisible(false);
         } catch (err) {
             const message = err.response?.data?.error || "Failed to add office bearer.";
+            toast.error(message, { id: toastId });
+        }
+    };
+
+    // --- NEW ---
+    const handleDeleteOfficeBearer = async (e) => {
+        e.preventDefault();
+        if (!bearerToDelete) {
+            toast.error("Please select an office bearer to delete.");
+            return;
+        }
+
+        const toastId = toast.loading("Deleting Office Bearer...");
+        try {
+            await axios.delete(`/api/grievances/office-bearer/${bearerToDelete}`);
+            setOfficeBearers(officeBearers.filter(ob => ob.id.toString() !== bearerToDelete));
+            toast.success("Office bearer deleted successfully!", { id: toastId });
+            setBearerToDelete('');
+            setDeleteBearerFormVisible(false);
+        } catch (err) {
+            const message = err.response?.data?.error || "Failed to delete office bearer.";
             toast.error(message, { id: toastId });
         }
     };
@@ -196,11 +224,15 @@ export default function ApprovingAuthority() {
                         </button>
                     </div>
 
-                    <div className="mb-8 flex justify-center gap-4">
+                    <div className="mb-8 flex flex-wrap justify-center gap-4">
                         <button onClick={() => setAddBearerFormVisible(!isAddBearerFormVisible)}
                             className="btn btn-primary inline-flex items-center justify-center gap-2">
-                            {isAddBearerFormVisible ? 'Hide Form' : 'Add New Office Bearer'}
-                            {isAddBearerFormVisible ? <ChevronUp /> : <ChevronDown />}
+                            {isAddBearerFormVisible ? 'Hide Add Form' : 'Add Office Bearer'}
+                        </button>
+                        {/* --- NEW --- */}
+                        <button onClick={() => setDeleteBearerFormVisible(!isDeleteBearerFormVisible)}
+                            className="btn btn-danger inline-flex items-center justify-center gap-2">
+                            {isDeleteBearerFormVisible ? 'Hide Delete Form' : 'Delete Office Bearer'}
                         </button>
                         <button onClick={openTransferModal}
                             className="btn bg-green-600 text-white hover:bg-green-700 inline-flex items-center justify-center gap-2">
@@ -224,7 +256,24 @@ export default function ApprovingAuthority() {
                         </form>
                     )}
 
-                    <div className="bg-white p-6 rounded-lg shadow-md">
+                    {/* --- NEW --- */}
+                    {isDeleteBearerFormVisible && (
+                        <form onSubmit={handleDeleteOfficeBearer} className="space-y-4 bg-white p-6 rounded-lg shadow mt-4 text-left animate-enter">
+                            <h2 className="text-xl font-semibold text-gray-800 text-center">Delete Office Bearer</h2>
+                            <select value={bearerToDelete} onChange={(e) => setBearerToDelete(e.target.value)} className="w-full p-2 border rounded" required>
+                                <option value="">Select Office Bearer to Delete</option>
+                                {officeBearers.map((bearer) => (
+                                    <option key={bearer.id} value={bearer.id}>
+                                        {bearer.name} ({bearer.email}) - {bearer.department}
+                                    </option>
+                                ))}
+                            </select>
+                            <button type="submit" className="w-full btn-danger">Delete Office Bearer</button>
+                        </form>
+                    )}
+
+
+                    <div className="bg-white p-6 rounded-lg shadow-md mt-8">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-semibold text-gray-800">Escalated Grievances (Level 1)</h2>
                             <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 text-blue-600 font-semibold">

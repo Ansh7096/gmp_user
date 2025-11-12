@@ -52,10 +52,13 @@ export const listDepartments = (req, res, next) => {
     });
 };
 
+// --- UPDATED ---
+// Now returns ID and Name
 export const listLocations = (req, res, next) => {
     getAllLocations((err, results) => {
         if (err) return next(new ErrorResponse('DB error fetching locations', 500));
-        res.json(results.map(loc => loc.name));
+        // res.json(results.map(loc => loc.name)); // Old
+        res.json(results); // New
     });
 };
 
@@ -432,6 +435,43 @@ export const revertToLevel1 = async (req, res, next) => {
     }
 };
 
+// --- NEW MANAGEMENT FUNCTIONS ---
+
+const createDeleteHandler = (tableName, friendlyName) => async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        await db.promise().query(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
+        res.status(200).json({ message: `${friendlyName} deleted successfully.` });
+    } catch (err) {
+        if (err.errno === 1451) {
+            return next(new ErrorResponse(`Cannot delete ${friendlyName} as it is currently in use by a grievance or other record.`, 400));
+        }
+        next(new ErrorResponse(`DB error deleting ${friendlyName}.`, 500, err));
+    }
+};
+
+export const getAllCategories = (req, res, next) => {
+    db.query('SELECT c.id, c.name, d.name as department_name FROM categories c JOIN departments d ON c.department_id = d.id ORDER BY d.name, c.name', (err, results) => {
+        if (err) return next(new ErrorResponse('DB error fetching all categories', 500));
+        res.json(results);
+    });
+};
+
+export const getAllAuthorities = (req, res, next) => {
+    db.query('SELECT id, name, email FROM approving_authorities ORDER BY name', (err, results) => {
+        if (err) return next(new ErrorResponse('DB error fetching authorities', 500));
+        res.json(results);
+    });
+};
+
+export const getAllOfficeBearers = (req, res, next) => {
+    db.query('SELECT id, name, email, department FROM office_bearers ORDER BY department, name', (err, results) => {
+        if (err) return next(new ErrorResponse('DB error fetching office bearers', 500));
+        res.json(results);
+    });
+};
+
+
 export const addApprovingAuthority = (req, res, next) => {
     const { name, email, password, mobile_number } = req.body;
     bcrypt.hash(password, 6, (err, hashedPassword) => {
@@ -466,3 +506,10 @@ export const addCategory = (req, res, next) => {
         res.status(201).json({ message: 'Category added successfully', id: result.insertId });
     });
 };
+
+// --- NEW DELETE HANDLERS ---
+export const deleteDepartment = createDeleteHandler('departments', 'Department');
+export const deleteLocation = createDeleteHandler('locations', 'Location');
+export const deleteCategory = createDeleteHandler('categories', 'Category');
+export const deleteApprovingAuthority = createDeleteHandler('approving_authorities', 'Approving Authority');
+export const deleteOfficeBearer = createDeleteHandler('office_bearers', 'Office Bearer');

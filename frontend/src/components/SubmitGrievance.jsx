@@ -56,7 +56,7 @@ export default function SubmitGrievance() {
             axios.get("/api/grievances/locations")
         ]).then(([deptsRes, locsRes]) => {
             setDepartmentsList(deptsRes.data);
-            setLocationsList(locsRes.data);
+            setLocationsList(locsRes.data); // This is now [{id, name}, ...]
         }).catch(err => {
             console.error("Failed to fetch initial data:", err);
             toast.error("Failed to fetch initial data.");
@@ -121,7 +121,7 @@ export default function SubmitGrievance() {
             const data = new FormData();
             data.append("title", formData.title);
             data.append("description", formData.description);
-            data.append("location", formData.location);
+            data.append("location", formData.location); // Sending location name, backend expects this
             data.append("department", formData.department);
             data.append("category", formData.category);
             data.append("urgency", formData.urgency);
@@ -286,8 +286,9 @@ export default function SubmitGrievance() {
                             required
                         >
                             <option value="">Select Location</option>
+                            {/* --- UPDATED --- */}
                             {locationsList.map(loc => (
-                                <option key={loc} value={loc}>{loc}</option>
+                                <option key={loc.id} value={loc.name}>{loc.name}</option>
                             ))}
                         </select>
                     </div>

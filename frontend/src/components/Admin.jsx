@@ -40,9 +40,14 @@ export default function Admin() {
     const [grievances, setGrievances] = useState([]);
     const [level2Grievances, setLevel2Grievances] = useState([]);
     const [stats, setStats] = useState(null);
-    const [departments, setDepartments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+
+    // --- NEW State for management lists ---
+    const [departments, setDepartments] = useState([]);
+    const [locations, setLocations] = useState([]);
+    const [allCategories, setAllCategories] = useState([]);
+    const [authorities, setAuthorities] = useState([]);
 
     const [isRevertModalOpen, setRevertModalOpen] = useState(false);
     const [selectedGrievance, setSelectedGrievance] = useState(null);
@@ -53,6 +58,9 @@ export default function Admin() {
     const [newLocation, setNewLocation] = useState('');
     const [newDepartment, setNewDepartment] = useState('');
     const [newCategory, setNewCategory] = useState({ name: '', department_id: '', urgency: 'Normal' });
+
+    // --- NEW State for deletion ---
+    const [deleteSelection, setDeleteSelection] = useState('');
 
 
     const [filters, setFilters] = useState({
@@ -119,12 +127,20 @@ export default function Admin() {
             axios.get('/api/grievances/admin/all'),
             axios.get('/api/grievances/admin/stats'),
             axios.get('/api/grievances/departments'),
-            axios.get('/api/grievances/admin/escalated-level2')
-        ]).then(([grievanceRes, statsRes, deptRes, level2Res]) => {
+            axios.get('/api/grievances/admin/escalated-level2'),
+            // --- NEW Fetches ---
+            axios.get('/api/grievances/locations'),
+            axios.get('/api/grievances/admin/all-categories'),
+            axios.get('/api/grievances/admin/all-authorities')
+        ]).then(([grievanceRes, statsRes, deptRes, level2Res, locRes, catRes, authRes]) => {
             setGrievances(grievanceRes.data);
             setStats(statsRes.data);
             setDepartments(deptRes.data);
             setLevel2Grievances(level2Res.data);
+            // --- NEW State Updates ---
+            setLocations(locRes.data);
+            setAllCategories(catRes.data);
+            setAuthorities(authRes.data);
         }).catch(err => {
             console.error("Fetch error:", err);
             setError("Failed to load admin data.");
@@ -190,8 +206,18 @@ export default function Admin() {
         e.preventDefault();
         const toastId = toast.loading('Submitting...');
         try {
-            await axios.post(`/api/grievances/admin/${endpoint}`, body);
+            const res = await axios.post(`/api/grievances/admin/${endpoint}`, body);
             toast.success('Success!', { id: toastId });
+
+            // --- NEW: Refresh state on ADD ---
+            if (endpoint === 'add-authority') setAuthorities([...authorities, { ...body, id: res.data.id }]);
+            if (endpoint === 'add-location') setLocations([...locations, { name: body.name, id: res.data.id }]);
+            if (endpoint === 'add-department') setDepartments([...departments, { ...body, id: res.data.id }]);
+            if (endpoint === 'add-category') {
+                const deptName = departments.find(d => d.id.toString() === body.department_id)?.name;
+                setAllCategories([...allCategories, { ...body, id: res.data.id, department_name: deptName }]);
+            }
+
             successCallback();
             setActiveForm(null);
         } catch (err) {
@@ -200,8 +226,37 @@ export default function Admin() {
         }
     };
 
+    // --- NEW: Generic Delete Handler ---
+    const handleDelete = async (e, type, friendlyName) => {
+        e.preventDefault();
+        if (!deleteSelection) {
+            toast.error(`Please select a ${friendlyName} to delete.`);
+            return;
+        }
+
+        const toastId = toast.loading(`Deleting ${friendlyName}...`);
+        try {
+            await axios.delete(`/api/grievances/admin/${type}/${deleteSelection}`);
+            toast.success(`${friendlyName} deleted!`, { id: toastId });
+
+            // Update local state
+            if (type === 'authority') setAuthorities(authorities.filter(a => a.id.toString() !== deleteSelection));
+            if (type === 'location') setLocations(locations.filter(l => l.id.toString() !== deleteSelection));
+            if (type === 'department') setDepartments(departments.filter(d => d.id.toString() !== deleteSelection));
+            if (type === 'category') setAllCategories(allCategories.filter(c => c.id.toString() !== deleteSelection));
+
+            setDeleteSelection('');
+            setActiveForm(null);
+        } catch (err) {
+            const message = err.response?.data?.error || `Failed to delete ${friendlyName}.`;
+            toast.error(`Error: ${message}`, { id: toastId });
+        }
+    };
+
+
     const toggleForm = (formName) => {
         setActiveForm(activeForm === formName ? null : formName);
+        setDeleteSelection(''); // Reset delete selection when toggling
     };
 
     const openRevertModal = (grievance) => {
@@ -336,6 +391,9 @@ export default function Admin() {
 
                     <div className="bg-white p-6 rounded-lg shadow mb-8">
                         <h2 className="text-2xl font-semibold mb-4">Management Actions</h2>
+
+                        {/* --- UPDATED Button Grid --- */}
+                        <h3 className="font-semibold text-lg mb-2">Add Entities</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <button onClick={() => toggleForm('authority')} className="btn btn-primary">Add Authority</button>
                             <button onClick={() => toggleForm('location')} className="btn btn-primary">Add Location</button>
@@ -343,6 +401,16 @@ export default function Admin() {
                             <button onClick={() => toggleForm('category')} className="btn btn-primary">Add Category</button>
                         </div>
 
+                        <h3 className="font-semibold text-lg mb-2 mt-6">Delete Entities</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            <button onClick={() => toggleForm('deleteAuthority')} className="btn btn-danger">Delete Authority</button>
+                            <button onClick={() => toggleForm('deleteLocation')} className="btn btn-danger">Delete Location</button>
+                            <button onClick={() => toggleForm('deleteDepartment')} className="btn btn-danger">Delete Department</button>
+                            <button onClick={() => toggleForm('deleteCategory')} className="btn btn-danger">Delete Category</button>
+                        </div>
+
+
+                        {/* --- ADD FORMS (Unchanged) --- */}
                         {activeForm === 'authority' && (
                             <form onSubmit={(e) => handleFormSubmit(e, 'add-authority', newAuthority, () => setNewAuthority({ name: '', email: '', password: '', mobile_number: '' }))} className="space-y-2 mt-4 p-4 border rounded-lg">
                                 <h3 className="font-semibold text-lg mb-2">Add Approving Authority</h3>
@@ -383,6 +451,49 @@ export default function Admin() {
                                 <button type="submit" className="w-full btn bg-green-500 hover:bg-green-600 text-white">Submit</button>
                             </form>
                         )}
+
+                        {/* --- NEW DELETE FORMS --- */}
+                        {activeForm === 'deleteAuthority' && (
+                            <form onSubmit={(e) => handleDelete(e, 'authority', 'Authority')} className="space-y-2 mt-4 p-4 border rounded-lg">
+                                <h3 className="font-semibold text-lg mb-2">Delete Approving Authority</h3>
+                                <select value={deleteSelection} onChange={e => setDeleteSelection(e.target.value)} className="w-full p-2 border rounded" required>
+                                    <option value="">Select Authority</option>
+                                    {authorities.map(a => <option key={a.id} value={a.id}>{a.name} ({a.email})</option>)}
+                                </select>
+                                <button type="submit" className="w-full btn-danger">Delete</button>
+                            </form>
+                        )}
+                        {activeForm === 'deleteLocation' && (
+                            <form onSubmit={(e) => handleDelete(e, 'location', 'Location')} className="space-y-2 mt-4 p-4 border rounded-lg">
+                                <h3 className="font-semibold text-lg mb-2">Delete Location</h3>
+                                <select value={deleteSelection} onChange={e => setDeleteSelection(e.target.value)} className="w-full p-2 border rounded" required>
+                                    <option value="">Select Location</option>
+                                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
+                                <button type="submit" className="w-full btn-danger">Delete</button>
+                            </form>
+                        )}
+                        {activeForm === 'deleteDepartment' && (
+                            <form onSubmit={(e) => handleDelete(e, 'department', 'Department')} className="space-y-2 mt-4 p-4 border rounded-lg">
+                                <h3 className="font-semibold text-lg mb-2">Delete Department</h3>
+                                <select value={deleteSelection} onChange={e => setDeleteSelection(e.target.value)} className="w-full p-2 border rounded" required>
+                                    <option value="">Select Department</option>
+                                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                                <button type="submit" className="w-full btn-danger">Delete</button>
+                            </form>
+                        )}
+                        {activeForm === 'deleteCategory' && (
+                            <form onSubmit={(e) => handleDelete(e, 'category', 'Category')} className="space-y-2 mt-4 p-4 border rounded-lg">
+                                <h3 className="font-semibold text-lg mb-2">Delete Category</h3>
+                                <select value={deleteSelection} onChange={e => setDeleteSelection(e.target.value)} className="w-full p-2 border rounded" required>
+                                    <option value="">Select Category</option>
+                                    {allCategories.map(c => <option key={c.id} value={c.id}>{c.name} (Dept: {c.department_name})</option>)}
+                                </select>
+                                <button type="submit" className="w-full btn-danger">Delete</button>
+                            </form>
+                        )}
+
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow">
