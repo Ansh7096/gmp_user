@@ -1,19 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, MessageSquare, ArrowRightCircle, Filter, Trash2 } from 'lucide-react'; // Added Trash2
+import { ChevronDown, ChevronUp, MessageSquare, ArrowRightCircle, Filter, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Modal from './Modal';
-import axios from '../api/axiosConfig'; // Use the configured axios instance
-
+import axios from '../api/axiosConfig';
 export default function ApprovingAuthority() {
     const [allGrievances, setAllGrievances] = useState([]);
     const [departments, setDepartments] = useState([]);
-    const [officeBearers, setOfficeBearers] = useState([]); // --- NEW ---
+    const [officeBearers, setOfficeBearers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [isAddBearerFormVisible, setAddBearerFormVisible] = useState(false);
-    const [isDeleteBearerFormVisible, setDeleteBearerFormVisible] = useState(false); // --- NEW ---
+    const [isDeleteBearerFormVisible, setDeleteBearerFormVisible] = useState(false);
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
     const [departmentFilter, setDepartmentFilter] = useState('');
     const navigate = useNavigate();
@@ -29,17 +28,16 @@ export default function ApprovingAuthority() {
     const [newOfficeBearer, setNewOfficeBearer] = useState({
         name: '', email: '', password: '', mobile_number: '', role: 'Office Bearer', department: ''
     });
-    const [bearerToDelete, setBearerToDelete] = useState(''); // --- NEW ---
-
+    const [bearerToDelete, setBearerToDelete] = useState('');
     useEffect(() => {
         Promise.all([
             axios.get('/api/grievances/escalated'),
             axios.get('/api/grievances/departments'),
-            axios.get('/api/grievances/office-bearers') // --- NEW ---
+            axios.get('/api/grievances/office-bearers')
         ]).then(([grievanceRes, departmentRes, bearerRes]) => {
             setAllGrievances(grievanceRes.data);
             setDepartments(departmentRes.data);
-            setOfficeBearers(bearerRes.data); // --- NEW ---
+            setOfficeBearers(bearerRes.data);
             setIsLoading(false);
         }).catch(err => {
             console.error("Fetch error:", err);
@@ -165,7 +163,7 @@ export default function ApprovingAuthority() {
         }
     };
 
-    // --- NEW ---
+
     const handleDeleteOfficeBearer = async (e) => {
         e.preventDefault();
         if (!bearerToDelete) {
@@ -256,7 +254,7 @@ export default function ApprovingAuthority() {
                         </form>
                     )}
 
-                    {/* --- NEW --- */}
+                    { }
                     {isDeleteBearerFormVisible && (
                         <form onSubmit={handleDeleteOfficeBearer} className="space-y-4 bg-white p-6 rounded-lg shadow mt-4 text-left animate-enter">
                             <h2 className="text-xl font-semibold text-gray-800 text-center">Delete Office Bearer</h2>
@@ -268,7 +266,7 @@ export default function ApprovingAuthority() {
                                     </option>
                                 ))}
                             </select>
-                            <button type="submit" className="w-full btn-danger">Delete Office Bearer</button>
+                            <button type="submit" className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Delete Office Bearer</button>
                         </form>
                     )}
 

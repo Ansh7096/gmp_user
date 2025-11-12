@@ -460,7 +460,7 @@ export default function Admin() {
                                     <option value="">Select Authority</option>
                                     {authorities.map(a => <option key={a.id} value={a.id}>{a.name} ({a.email})</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn-danger">Delete</button>
+                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteLocation' && (
@@ -470,7 +470,7 @@ export default function Admin() {
                                     <option value="">Select Location</option>
                                     {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn-danger">Delete</button>
+                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteDepartment' && (
@@ -480,7 +480,7 @@ export default function Admin() {
                                     <option value="">Select Department</option>
                                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn-danger">Delete</button>
+                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteCategory' && (
@@ -490,7 +490,7 @@ export default function Admin() {
                                     <option value="">Select Category</option>
                                     {allCategories.map(c => <option key={c.id} value={c.id}>{c.name} (Dept: {c.department_name})</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn-danger">Delete</button>
+                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
                             </form>
                         )}
 

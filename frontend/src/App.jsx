@@ -25,8 +25,8 @@ import ForgotPassword from "./components/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GrievanceHistory from "./components/GrievanceHistory";
 
-// Inactivity Logout Hook
-const useInactivityTimeout = (timeout = 180000) => { // 3 minutes
+
+const useInactivityTimeout = (timeout = 180000) => {
   const navigate = useNavigate();
 
   const logout = useCallback(() => {
@@ -45,7 +45,7 @@ const useInactivityTimeout = (timeout = 180000) => { // 3 minutes
 
     const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
-    resetTimer(); // Initialize timer
+    resetTimer();
 
     return () => {
       clearTimeout(timer);
@@ -54,10 +54,31 @@ const useInactivityTimeout = (timeout = 180000) => { // 3 minutes
   }, [logout, timeout]);
 };
 
+const useAuthSync = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+
+      if (event.key === 'token' && event.newValue === null) {
+        toast.error('You have been logged out from another tab.', { duration: 4000 });
+        navigate('/login', { state: { from: 'crosstab' } });
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [navigate]);
+};
+
 
 function AppContent() {
   const location = useLocation();
-  useInactivityTimeout(); // Apply the inactivity hook globally
+  useInactivityTimeout();
+  useAuthSync();
 
   const hideNavbar = [
     "/login",
@@ -78,7 +99,7 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Protected Routes */}
+        { }
         <Route
           path="/home"
           element={
@@ -162,7 +183,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500); // Reduced loader time
+    const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
