@@ -254,6 +254,22 @@ export default function ApprovingAuthority() {
                         </form>
                     )}
 
+
+                    {isAddBearerFormVisible && (
+                        <form onSubmit={handleAddOfficeBearerSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow mt-4 text-left animate-enter">
+                            <h2 className="text-xl font-semibold text-gray-800 text-center">New Office Bearer Details</h2>
+                            <input type="text" name="name" placeholder="Name" value={newOfficeBearer.name} onChange={handleAddOfficeBearerChange} className="w-full p-2 border rounded" required />
+                            <input type="email" name="email" placeholder="Email" value={newOfficeBearer.email} onChange={handleAddOfficeBearerChange} className="w-full p-2 border rounded" required />
+                            <input type="password" name="password" placeholder="Password" value={newOfficeBearer.password} onChange={handleAddOfficeBearerChange} className="w-full p-2 border rounded" required />
+                            <input type="tel" name="mobile_number" placeholder="Mobile Number" value={newOfficeBearer.mobile_number} onChange={handleAddOfficeBearerChange} className="w-full p-2 border rounded" required />
+                            <select name="department" value={newOfficeBearer.department} onChange={handleAddOfficeBearerChange} className="w-full p-2 border rounded" required>
+                                <option value="">Select Department</option>
+                                {departments.map((dept) => (<option key={dept.id} value={dept.name}>{dept.name}</option>))}
+                            </select>
+                            <button type="submit" className="w-full btn bg-green-600 text-white hover:bg-green-700">Add Office Bearer</button>
+                        </form>
+                    )}
+
                     { }
                     {isDeleteBearerFormVisible && (
                         <form onSubmit={handleDeleteOfficeBearer} className="space-y-4 bg-white p-6 rounded-lg shadow mt-4 text-left animate-enter">
@@ -266,10 +282,9 @@ export default function ApprovingAuthority() {
                                     </option>
                                 ))}
                             </select>
-                            <button type="submit" className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Delete Office Bearer</button>
+                            <button type="submit" className="w-full btn btn-danger">Delete Office Bearer</button>
                         </form>
                     )}
-
 
                     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
                         <div className="flex justify-between items-center mb-4">

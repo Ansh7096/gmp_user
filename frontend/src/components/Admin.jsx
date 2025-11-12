@@ -392,7 +392,7 @@ export default function Admin() {
                     <div className="bg-white p-6 rounded-lg shadow mb-8">
                         <h2 className="text-2xl font-semibold mb-4">Management Actions</h2>
 
-                        {/* --- UPDATED Button Grid --- */}
+                        { }
                         <h3 className="font-semibold text-lg mb-2">Add Entities</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <button onClick={() => toggleForm('authority')} className="btn btn-primary">Add Authority</button>
@@ -410,7 +410,7 @@ export default function Admin() {
                         </div>
 
 
-                        {/* --- ADD FORMS (Unchanged) --- */}
+                        { }
                         {activeForm === 'authority' && (
                             <form onSubmit={(e) => handleFormSubmit(e, 'add-authority', newAuthority, () => setNewAuthority({ name: '', email: '', password: '', mobile_number: '' }))} className="space-y-2 mt-4 p-4 border rounded-lg">
                                 <h3 className="font-semibold text-lg mb-2">Add Approving Authority</h3>
@@ -452,7 +452,8 @@ export default function Admin() {
                             </form>
                         )}
 
-                        {/* --- NEW DELETE FORMS --- */}
+
+                        { }
                         {activeForm === 'deleteAuthority' && (
                             <form onSubmit={(e) => handleDelete(e, 'authority', 'Authority')} className="space-y-2 mt-4 p-4 border rounded-lg">
                                 <h3 className="font-semibold text-lg mb-2">Delete Approving Authority</h3>
@@ -460,7 +461,7 @@ export default function Admin() {
                                     <option value="">Select Authority</option>
                                     {authorities.map(a => <option key={a.id} value={a.id}>{a.name} ({a.email})</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
+                                <button type="submit" className="w-full btn btn-danger">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteLocation' && (
@@ -470,7 +471,7 @@ export default function Admin() {
                                     <option value="">Select Location</option>
                                     {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
+                                <button type="submit" className="w-full btn btn-danger">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteDepartment' && (
@@ -480,7 +481,7 @@ export default function Admin() {
                                     <option value="">Select Department</option>
                                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
+                                <button type="submit" className="w-full btn btn-danger">Delete</button>
                             </form>
                         )}
                         {activeForm === 'deleteCategory' && (
@@ -490,11 +491,12 @@ export default function Admin() {
                                     <option value="">Select Category</option>
                                     {allCategories.map(c => <option key={c.id} value={c.id}>{c.name} (Dept: {c.department_name})</option>)}
                                 </select>
-                                <button type="submit" className="w-full btn bg-red-500 hover:bg-red-600 text-white">Delete</button>
+                                <button type="submit" className="w-full btn btn-danger">Delete</button>
                             </form>
                         )}
 
                     </div>
+
 
                     <div className="bg-white p-6 rounded-lg shadow">
                         <div className="flex justify-between items-center mb-4">
