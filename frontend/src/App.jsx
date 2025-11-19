@@ -26,7 +26,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import GrievanceHistory from "./components/GrievanceHistory";
 
 
-const useInactivityTimeout = (timeout = 180000) => {
+const useInactivityTimeout = (timeout = 1800000) => {
   const navigate = useNavigate();
 
   const logout = useCallback(() => {
